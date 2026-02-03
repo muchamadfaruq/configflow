@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mikrotik Script Cleaner</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 5px;
+        }
+
+        p {
+            margin-top: 0;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 220px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+
+        .buttons {
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 8px 14px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: #fff;
+        }
+
+        .box {
+            background: #fff;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        }
+
+        pre {
+            background: #111;
+            color: #0f0;
+            padding: 15px;
+            overflow: auto;
+            font-size: 13px;
+            border-radius: 4px;
+            min-height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2>🧹 Mikrotik Script Cleaner</h2>
+        <p>Rapikan script hotspot yang terpotong (<code>\</code>) jadi 1 baris siap paste</p>
+
+        <textarea id="input" placeholder="Paste script Mikrotik di sini..."></textarea>
+
+        <div class="buttons">
+            <button class="btn-primary" onclick="cleanScript()">Rapikan Script</button>
+            <button class="btn-success" onclick="copyScript()">Copy Script Bersih</button>
+        </div>
+
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        function cleanScript() {
+            const raw = document.getElementById("input").value;
+            if (!raw.trim()) return;
+
+            const lines = raw.split(/\r?\n/);
+            let result = [];
+            let buffer = "";
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                if (buffer) {
+                    buffer += " " + line;
+                    if (!buffer.endsWith("\\")) {
+                        result.push(formatProfile(buffer));
+                        buffer = "";
+                    }
+                    continue;
+                }
+
+                if (line.endsWith("\\")) {
+                    buffer = line.slice(0, -1).trim();
+                    continue;
+                }
+
+                result.push(formatProfile(line));
+            }
+
+            if (buffer) {
+                result.push(formatProfile(buffer));
+            }
+
+            document.getElementById("output").textContent = result.join("\n");
+        }
+
+        function formatProfile(line) {
+            return line.replace(/profile=([^\s"]+)/g, 'profile="$1"');
+        }
+
+        function copyScript() {
+            const text = document.getElementById("output").textContent;
+            if (!text.trim()) {
+                alert("Script belum dirapikan!");
+                return;
+            }
+
+            navigator.clipboard.writeText(text)
+                .then(() => alert("✅ Script berhasil dicopy"))
+                .catch(() => alert("❌ Gagal copy"));
+        }
+    </script>
+
+</body>
+
+</html>

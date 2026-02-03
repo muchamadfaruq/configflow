@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Converter + Hotspot Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 240px;
+            font-family: monospace;
+        }
+
+        button {
+            margin-right: 10px;
+            padding: 6px 12px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 6px;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f0f0f0;
+            position: sticky;
+            top: 0;
+        }
+
+        .wrap {
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        pre {
+            background: #111;
+            color: #0f0;
+            padding: 15px;
+            margin-top: 20px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>hasil dari ip hotspot user print file=userhotspot</h2>
+
+    <textarea id="input" placeholder="Paste semua data di sini..."></textarea>
+    <br><br>
+
+    <!-- TOMBOL ASLI (TIDAK DIHAPUS) -->
+    <button onclick="convert()">Convert ke Tabel Clean</button>
+    <button onclick="copyTable()">Copy Seluruh Tabel</button>
+
+    <!-- TOMBOL TAMBAHAN -->
+    <button onclick="generateScript()">Generate Script Hotspot</button>
+    <button onclick="copyScript()">Copy Script Hotspot</button>
+
+    <div class="wrap" id="output"></div>
+
+    <h3>Script Mikrotik</h3>
+    <pre id="scriptOutput"></pre>
+
+    <script>
+        let cachedRows = [];
+
+        function convert() {
+            const raw = document.getElementById("input").value;
+            if (!raw.trim()) return;
+
+            const lines = raw.split(/\r?\n/);
+            let rows = [];
+            cachedRows = [];
+            let pendingComment = "";
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                if (line.startsWith(";;;")) {
+                    pendingComment = line.replace(/^;;;/, "").trim();
+                    continue;
+                }
+
+                const parts = line.split(/\s+/);
+                const no = parts.shift(); // STRING → aman 00
+                let flag = "";
+
+                if (parts[0] === "X") {
+                    flag = "X";
+                    parts.shift();
+                }
+
+                const name = parts.shift();
+                const time = parts.pop();
+                const profile = parts.join(" ");
+
+                rows.push(`
+<tr>
+<td>${no}</td>
+<td>${flag}</td>
+<td>'${name}</td>
+<td>${profile}</td>
+<td>${time}</td>
+<td>${pendingComment}</td>
+</tr>
+`);
+
+                cachedRows.push({
+                    name,
+                    profile,
+                    comment: pendingComment
+                });
+
+                pendingComment = "";
+            }
+
+            document.getElementById("output").innerHTML = `
+<table id="resultTable">
+<thead>
+<tr>
+<th>No</th>
+<th>Flag</th>
+<th>Nama</th>
+<th>Profile</th>
+<th>Waktu</th>
+<th>Komentar</th>
+</tr>
+</thead>
+<tbody>
+${rows.join("")}
+</tbody>
+</table>
+`;
+        }
+
+        function copyTable() {
+            const table = document.getElementById("resultTable");
+            if (!table) {
+                alert("Tabel belum dibuat!");
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNode(table);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand("copy");
+            selection.removeAllRanges();
+
+            alert("✅ Tabel berhasil dicopy!");
+        }
+
+        // ====== FUNGSI TAMBAHAN (TIDAK MENGUBAH YANG LAMA) ======
+
+        function generateScript() {
+            if (!cachedRows.length) {
+                alert("Convert tabel dulu!");
+                return;
+            }
+
+            const profiles = new Set();
+            let script = [];
+
+            cachedRows.forEach(r => profiles.add(r.profile));
+
+            script.push("# === TAMBAH PROFILE (JALANKAN SEKALI) ===");
+            profiles.forEach(p => {
+                script.push(`/ip hotspot user profile add name="${p}"`);
+            });
+
+            script.push("\n# === TAMBAH USER HOTSPOT ===");
+            cachedRows.forEach(r => {
+                script.push(
+                    `/ip hotspot user add name=${r.name} password=${r.name} profile="${r.profile}" comment="${r.comment}"`
+                );
+            });
+
+            document.getElementById("scriptOutput").textContent = script.join("\n");
+        }
+
+        function copyScript() {
+            const text = document.getElementById("scriptOutput").textContent;
+            if (!text.trim()) {
+                alert("Script belum dibuat!");
+                return;
+            }
+
+            navigator.clipboard.writeText(text)
+                .then(() => alert("✅ Script hotspot berhasil dicopy!"))
+                .catch(() => alert("❌ Gagal copy script"));
+        }
+    </script>
+
+</body>
+
+</html>
