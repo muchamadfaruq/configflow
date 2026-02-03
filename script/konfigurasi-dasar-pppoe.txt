@@ -1,0 +1,50 @@
+/ip dhcp-client
+add add-default-route=yes disabled=no interface=ether1 use-peer-dns=yes use-peer-ntp=no
+
+/interface bridge
+add name=bridge1
+
+/ip firewall nat
+add action=masquerade chain=srcnat
+
+/ip firewall mangle
+add action=change-ttl chain=postrouting comment="Change TTL" new-ttl=set:1 out-interface=bridge1 passthrough=no
+
+/ip address
+add address=10.10.8.1/22 interface=bridge1 network=10.10.8.0
+
+/ip pool
+add name="Pool Hotspot" ranges=10.10.8.2-10.10.11.254
+add name="Pool PPPoE" ranges=192.168.10.2-192.168.10.254
+
+/ip dhcp-server
+add address-pool="Pool Hotspot" disabled=no interface=bridge1 lease-time=3h name=dhcp1
+
+/ip dhcp-server network
+add address=10.10.8.0/22 gateway=10.10.8.1
+
+/system clock
+set time-zone-autodetect=no time-zone-name=Asia/Jakarta
+
+/system ntp client
+set enabled=yes primary-ntp=202.4.186.250 secondary-ntp=116.12.46.30
+
+/ip hotspot user profile
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=12-Jam
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Harian
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Mingguan
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Bulanan
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Bulanan-2-Perangkat
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Bulanan-3-Perangkat
+add address-pool="Pool Hotspot" !idle-timeout !keepalive-timeout name=Bulanan-4-Perangkat
+
+/ppp profile
+set *0 only-one=yes
+add local-address=192.168.10.1 name="10M" only-one=yes rate-limit=10M/10M remote-address="Pool PPPoE"
+add local-address=192.168.10.1 name="3M" only-one=yes rate-limit=3M/3M remote-address="Pool PPPoE"
+
+/interface bridge port
+add bridge=bridge1 interface=ether2
+add bridge=bridge1 interface=ether3
+add bridge=bridge1 interface=ether4
+add bridge=bridge1 interface=ether5

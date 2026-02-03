@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>VPN Generator Mikrotik - FaruqAdv</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+    <style>
+        body {
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        .card {
+            background: #020617;
+            border: 1px solid #1e293b;
+        }
+
+        pre {
+            background: #020617;
+            color: #22c55e;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem
+        }
+
+        .badge {
+            font-size: 0.75rem
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        <h3 class="mb-2">🚀 VPN Generator Mikrotik (CHR – L2TP & SSTP)</h3>
+        <p class="text-secondary">Google Sheet / Excel → Auto Generate Script</p>
+
+        <div class="mb-3">
+            <label class="form-label">🔗 Google Sheet (Publish CSV)</label>
+            <input type="text" id="sheetUrl" class="form-control mb-2" placeholder="Paste URL Google Sheet (CSV)">
+            <button class="btn btn-outline-primary btn-sm" onclick="loadFromSheet()">📡 Load dari Google Sheet</button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">📁 Upload Excel (Offline)</label>
+            <input type="file" id="excelFile" class="form-control" accept=".xls,.xlsx">
+        </div>
+
+        <input type="text" id="search" class="form-control mb-3" placeholder="🔍 Cari Username / IP Remote">
+
+        <div class="d-flex gap-2 mb-4">
+            <button class="btn btn-outline-warning btn-sm" onclick="downloadAllTXT()">⬇️ Download ALL TXT (ZIP)</button>
+            <button class="btn btn-outline-info btn-sm" onclick="downloadAllConfig()">⬇️ Download ALL CONFIG
+                (MIGRASI)</button>
+        </div>
+
+        <div id="output" class="row g-3"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const searchInput = document.getElementById('search');
+        let clients = [];
+
+        function buildOutput(c) {
+            return `No : ${c.No} | ${c.Username} | ${c.Password}
+
+/ppp secret add local-address=${c.Local} name=${c.Username} pass=${c.Password} profile="${c.Profile}" remote-address=${c.Remote} service=${c.Protocol}
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portwinbox} protocol=tcp to-addresses=${c.Remote} to-ports=8291 comment=${c.No}-${c.Username}-winbox
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portapi} protocol=tcp to-addresses=${c.Remote} to-ports=8728 comment=${c.No}-${c.Username}-API
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portcustom2000} protocol=tcp to-addresses=${c.Remote} to-ports=2000 comment=${c.No}-${c.Username}-OLT
+
+Server :
+chr.faruqadv.my.id
+
+Username :
+${c.Username}
+
+Password :
+${c.Password}
+
+IP Local :
+${c.Remote}
+
+Port Winbox :
+chr.faruqadv.my.id:${c.portwinbox}
+
+Port API :
+chr.faruqadv.my.id:${c.portapi}
+
+Custom port 2000 :
+chr.faruqadv.my.id:${c.portcustom2000}
+
+Protocol :
+${c.Protocol}
+
+*Paste script di bawah ini ke terminal mikrotik untuk mengaktifkan VPN :*
+
+/interface ${c.Protocol}-client add connect-to=chr.faruqadv.my.id name=l2tp-faruqadv.my.id user=${c.Username} password=${c.Password} comment=faruqadvmikhmon.my.id disable=no
+
+*Paste script di bawah ini ke terminal mikrotik untuk mengaktifkan remote OLT :*
+
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80`;
+        }
+
+        function buildConfigOnly(c) {
+            return `/ppp secret add local-address=${c.Local} name=${c.Username} pass=${c.Password} profile="${c.Profile}" remote-address=${c.Remote} service=${c.Protocol}
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portwinbox} protocol=tcp to-addresses=${c.Remote} to-ports=8291 comment=${c.No}-${c.Username}-winbox
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portapi} protocol=tcp to-addresses=${c.Remote} to-ports=8728 comment=${c.No}-${c.Username}-API
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portcustom2000} protocol=tcp to-addresses=${c.Remote} to-ports=2000 comment=${c.No}-${c.Username}-OLT`;
+        }
+
+        function loadFromSheet() {
+            const url = document.getElementById('sheetUrl').value.trim();
+            if (!url) return alert('URL kosong');
+
+            fetch(url)
+                .then(res => res.text())
+                .then(csv => {
+                    const wb = XLSX.read(csv, { type: 'string' });
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    clients = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                    render(clients);
+                })
+                .catch(() => alert('Gagal load Google Sheet'));
+        }
+
+        // EXCEL
+        document.getElementById('excelFile').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = evt => {
+                const wb = XLSX.read(evt.target.result, { type: 'binary' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                clients = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                render(clients);
+            };
+            reader.readAsBinaryString(file);
+        });
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase();
+            render(clients.filter(c =>
+                String(c.Username).toLowerCase().includes(q) ||
+                String(c.Remote).toLowerCase().includes(q)
+            ));
+        });
+
+        function render(data) {
+            output.innerHTML = '';
+            if (!data.length) return;
+
+            data.forEach(c => {
+                const content = buildOutput(c);
+                const card = document.createElement('div');
+                card.className = 'col-md-6';
+
+                card.innerHTML = `
+      <div class="card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong>${c.Username}</strong>
+          <span class="badge bg-success">${c.Protocol}</span>
+        </div>
+        <pre>${content}</pre>
+        <button class="btn btn-outline-success btn-sm mb-2">📋 Copy</button>
+        <button class="btn btn-outline-light btn-sm">⬇️ Download TXT</button>
+      </div>`;
+
+                const btns = card.querySelectorAll('button');
+                btns[0].onclick = () => navigator.clipboard.writeText(content);
+                btns[1].onclick = () => downloadTXT(`${c.Username}.txt`, content);
+
+                output.appendChild(card);
+            });
+        }
+
+        function downloadTXT(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            saveAs(blob, filename);
+        }
+
+        function downloadAllTXT() {
+            if (!clients.length) return alert('Belum ada data');
+            const zip = new JSZip();
+            clients.forEach(c => zip.file(`${c.Username}.txt`, buildOutput(c)));
+            zip.generateAsync({ type: 'blob' })
+                .then(blob => saveAs(blob, 'vpn-client-faruqadv.zip'));
+        }
+
+        function downloadAllConfig() {
+            if (!clients.length) return alert('Belum ada data');
+            const blob = new Blob([
+                clients.map(c => buildConfigOnly(c)).join('\n\n')
+            ], { type: 'text/plain;charset=utf-8' });
+
+            saveAs(blob, 'ALL-CONFIG-MIGRASI.rsc');
+        }
+    </script>
+</body>
+
+</html>
