@@ -15,194 +15,197 @@
         body {
             background: #0f172a;
             color: #e5e7eb;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         .card {
             background: #020617;
             border: 1px solid #1e293b;
+            border-radius: 12px;
         }
 
         pre {
-            background: #020617;
+            background: #000;
             color: #22c55e;
             padding: 12px;
             border-radius: 8px;
-            font-size: 0.85rem
+            font-size: 0.75rem;
+            border: 1px solid #1e293b;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
-        .badge {
-            font-size: 0.75rem
+        .form-control {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+        }
+
+        .form-control:focus {
+            background: #1e293b;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: none;
+        }
+
+        .text-info-custom {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .badge-protocol {
+            text-transform: uppercase;
+            font-size: 0.7rem;
         }
     </style>
 </head>
 
 <body>
     <div class="container py-4">
-        <h3 class="mb-2">🚀 VPN Generator Mikrotik (CHR – L2TP & SSTP)</h3>
-        <p class="text-secondary">Google Sheet / Excel → Auto Generate Script</p>
-
-        <div class="mb-3">
-            <label class="form-label">🔗 Google Sheet (Publish CSV)</label>
-            <input type="text" id="sheetUrl" class="form-control mb-2" placeholder="Paste URL Google Sheet (CSV)">
-            <button class="btn btn-outline-primary btn-sm" onclick="loadFromSheet()">📡 Load dari Google Sheet</button>
+        <div class="text-center mb-4">
+            <h3 class="text-info-custom">🚀 VPN Generator Mikrotik</h3>
+            <p class="text-secondary">Otomatisasi Script Server & Client (Anti-Undefined)</p>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">📁 Upload Excel (Offline)</label>
-            <input type="file" id="excelFile" class="form-control" accept=".xls,.xlsx">
+        <div class="card p-4 mb-4 shadow">
+            <label class="form-label fw-bold">🔗 Link Google Sheet (Link Edit atau CSV)</label>
+            <div class="input-group mb-2">
+                <input type="text" id="sheetUrl" class="form-control" placeholder="Paste link Google Sheet di sini...">
+                <button class="btn btn-primary px-4" onclick="loadFromSheet()">📡 Tarik Data</button>
+            </div>
+            <p class="small text-muted mb-0">Pastikan akses Google Sheet di-set ke <b>"Anyone with the link"</b>.</p>
         </div>
 
-        <input type="text" id="search" class="form-control mb-3" placeholder="🔍 Cari Username / IP Remote">
-
-        <div class="d-flex gap-2 mb-4">
-            <button class="btn btn-outline-warning btn-sm" onclick="downloadAllTXT()">⬇️ Download ALL TXT (ZIP)</button>
-            <button class="btn btn-outline-info btn-sm" onclick="downloadAllConfig()">⬇️ Download ALL CONFIG
-                (MIGRASI)</button>
+        <div class="row g-2 mb-4">
+            <div class="col-md-9">
+                <input type="text" id="search" class="form-control py-2"
+                    placeholder="🔍 Cari Username atau IP Remote...">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-info w-100" onclick="downloadAllConfig()">⬇️ Download .RSC All</button>
+            </div>
         </div>
 
         <div id="output" class="row g-3"></div>
     </div>
 
     <script>
-        const output = document.getElementById('output');
-        const searchInput = document.getElementById('search');
         let clients = [];
 
-        function buildOutput(c) {
-            return `No : ${c.No} | ${c.Username} | ${c.Password}
-
-/ppp secret add local-address=${c.Local} name=${c.Username} pass=${c.Password} profile="${c.Profile}" remote-address=${c.Remote} service=${c.Protocol}
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portwinbox} protocol=tcp to-addresses=${c.Remote} to-ports=8291 comment=${c.No}-${c.Username}-winbox
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portapi} protocol=tcp to-addresses=${c.Remote} to-ports=8728 comment=${c.No}-${c.Username}-API
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portcustom2000} protocol=tcp to-addresses=${c.Remote} to-ports=2000 comment=${c.No}-${c.Username}-OLT
-
-Server :
-chr.faruqadv.my.id
-
-Username :
-${c.Username}
-
-Password :
-${c.Password}
-
-IP Local :
-${c.Remote}
-
-Port Winbox :
-chr.faruqadv.my.id:${c.portwinbox}
-
-Port API :
-chr.faruqadv.my.id:${c.portapi}
-
-Custom port 2000 :
-chr.faruqadv.my.id:${c.portcustom2000}
-
-Protocol :
-${c.Protocol}
-
-*Paste script di bawah ini ke terminal mikrotik untuk mengaktifkan VPN :*
-
-/interface ${c.Protocol}-client add connect-to=chr.faruqadv.my.id name=l2tp-faruqadv.my.id user=${c.Username} password=${c.Password} comment=faruqadvmikhmon.my.id disable=no
-
-*Paste script di bawah ini ke terminal mikrotik untuk mengaktifkan remote OLT :*
-
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80`;
-        }
-
-        function buildConfigOnly(c) {
-            return `/ppp secret add local-address=${c.Local} name=${c.Username} pass=${c.Password} profile="${c.Profile}" remote-address=${c.Remote} service=${c.Protocol}
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portwinbox} protocol=tcp to-addresses=${c.Remote} to-ports=8291 comment=${c.No}-${c.Username}-winbox
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portapi} protocol=tcp to-addresses=${c.Remote} to-ports=8728 comment=${c.No}-${c.Username}-API
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${c.portcustom2000} protocol=tcp to-addresses=${c.Remote} to-ports=2000 comment=${c.No}-${c.Username}-OLT`;
-        }
-
-        function loadFromSheet() {
-            const url = document.getElementById('sheetUrl').value.trim();
-            if (!url) return alert('URL kosong');
-
-            fetch(url)
-                .then(res => res.text())
-                .then(csv => {
-                    const wb = XLSX.read(csv, { type: 'string' });
-                    const sheet = wb.Sheets[wb.SheetNames[0]];
-                    clients = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-                    render(clients);
-                })
-                .catch(() => alert('Gagal load Google Sheet'));
-        }
-
-        // EXCEL
-        document.getElementById('excelFile').addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = evt => {
-                const wb = XLSX.read(evt.target.result, { type: 'binary' });
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                clients = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-                render(clients);
-            };
-            reader.readAsBinaryString(file);
-        });
-
-        searchInput.addEventListener('input', () => {
-            const q = searchInput.value.toLowerCase();
-            render(clients.filter(c =>
-                String(c.Username).toLowerCase().includes(q) ||
-                String(c.Remote).toLowerCase().includes(q)
-            ));
-        });
-
-        function render(data) {
-            output.innerHTML = '';
-            if (!data.length) return;
-
-            data.forEach(c => {
-                const content = buildOutput(c);
-                const card = document.createElement('div');
-                card.className = 'col-md-6';
-
-                card.innerHTML = `
-      <div class="card p-3 h-100">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <strong>${c.Username}</strong>
-          <span class="badge bg-success">${c.Protocol}</span>
-        </div>
-        <pre>${content}</pre>
-        <button class="btn btn-outline-success btn-sm mb-2">📋 Copy</button>
-        <button class="btn btn-outline-light btn-sm">⬇️ Download TXT</button>
-      </div>`;
-
-                const btns = card.querySelectorAll('button');
-                btns[0].onclick = () => navigator.clipboard.writeText(content);
-                btns[1].onclick = () => downloadTXT(`${c.Username}.txt`, content);
-
-                output.appendChild(card);
+        // FUNGSI NORMALISASI: Mengubah semua judul kolom jadi huruf kecil tanpa spasi
+        function normalizeData(data) {
+            return data.map(item => {
+                const newItem = {};
+                for (let key in item) {
+                    const cleanKey = key.toLowerCase().replace(/\s+/g, '');
+                    newItem[cleanKey] = item[key];
+                }
+                return newItem;
             });
         }
 
-        function downloadTXT(filename, content) {
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            saveAs(blob, filename);
+        function loadFromSheet() {
+            let url = document.getElementById('sheetUrl').value.trim();
+            if (!url) return alert('Link URL masih kosong!');
+
+            // AUTO FIX: Mengubah link EDIT menjadi link EXPORT CSV
+            if (url.includes('/edit') || url.includes('/sharing')) {
+                const match = url.match(/\/d\/(.+?)\//);
+                if (match && match[1]) {
+                    url = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+                }
+            }
+
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('Pastikan setingan Sharing adalah "Anyone with link".');
+                    return res.text();
+                })
+                .then(csv => {
+                    const wb = XLSX.read(csv, { type: 'string' });
+                    const sheetName = wb.SheetNames[0];
+                    const rawJson = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+                    clients = normalizeData(rawJson);
+                    render(clients);
+                })
+                .catch(err => alert(err.message));
         }
 
-        function downloadAllTXT() {
-            if (!clients.length) return alert('Belum ada data');
-            const zip = new JSZip();
-            clients.forEach(c => zip.file(`${c.Username}.txt`, buildOutput(c)));
-            zip.generateAsync({ type: 'blob' })
-                .then(blob => saveAs(blob, 'vpn-client-faruqadv.zip'));
+        function buildOutput(c) {
+            const u = c.username || "N/A";
+            const p = c.password || "";
+            const rem = c.remote || "";
+            const loc = c.local || "10.9.8.1";
+            const proto = (c.protocol || "l2tp").toLowerCase();
+            const prof = c.profile || "default";
+            const winbox = c.portwinbox || "";
+            const api = c.portapi || "";
+            const olt = c.portcustom2000 || "";
+            const no = c.no || "0";
+
+            // Script untuk di Server (CHR)
+            const serverScript = `/ppp secret add local-address=${loc} name=${u} pass=${p} profile="${prof}" remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${winbox} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+
+            // Script untuk di Client (MikroTik Pelanggan)
+            const clientScript = `/interface ${proto}-client add connect-to=chr.faruqadv.my.id name=VPN-faruqadv user=${u} password=${p} disabled=no`;
+
+            return {
+                full: `[ SCRIPT SERVER CHR ]\n${serverScript}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${clientScript}\n\n--- INFO LOGIN ---\nUser: ${u} | Pass: ${p}\nRemote IP: ${rem}\n\n📍 Port Winbox : chr.faruqadv.my.id:${winbox}\n📍 Port API    : chr.faruqadv.my.id:${api}\n📍 Port 2000   : chr.faruqadv.my.id:${olt}`,
+                clientOnly: clientScript
+            };
+        }
+        function render(data) {
+            const container = document.getElementById('output');
+            container.innerHTML = '';
+            data.forEach((c, i) => {
+                const scripts = buildOutput(c);
+                const card = document.createElement('div');
+                card.className = 'col-md-6';
+                card.innerHTML = `
+                    <div class="card p-3 h-100 shadow-sm">
+                        <div class="d-flex justify-content-between mb-2">
+                            <h5 class="text-info-custom mb-0">${c.username || 'Unnamed'}</h5>
+                            <span class="badge bg-success badge-protocol">${c.protocol || 'L2TP'}</span>
+                        </div>
+                        <pre id="code-${i}">${scripts.full}</pre>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm" onclick="copyTextDirect('${scripts.clientOnly}', this)">📋 Copy Script CLIENT saja</button>
+                            <button class="btn btn-outline-success btn-sm" onclick="copyFromID('code-${i}', this)">📄 Copy Semua (Server + Client)</button>
+                        </div>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function copyTextDirect(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const old = btn.innerText;
+                btn.innerText = '✅ Script Client Tersalin!';
+                setTimeout(() => btn.innerText = old, 1500);
+            });
+        }
+
+        function copyFromID(id, btn) {
+            const txt = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(txt).then(() => {
+                const old = btn.innerText;
+                btn.innerText = '✅ Semua Script Tersalin!';
+                setTimeout(() => btn.innerText = old, 1500);
+            });
         }
 
         function downloadAllConfig() {
-            if (!clients.length) return alert('Belum ada data');
-            const blob = new Blob([
-                clients.map(c => buildConfigOnly(c)).join('\n\n')
-            ], { type: 'text/plain;charset=utf-8' });
-
-            saveAs(blob, 'ALL-CONFIG-MIGRASI.rsc');
+            if (!clients.length) return alert('Data belum di-load!');
+            const all = clients.map(c => buildOutput(c).full).join('\n\n# --------------------------\n\n');
+            const blob = new Blob([all], { type: 'text/plain' });
+            saveAs(blob, 'MIGRASI-LENGKAP.rsc');
         }
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            const filtered = clients.filter(c => (c.username || '').toLowerCase().includes(q) || (c.remote || '').includes(q));
+            render(filtered);
+        });
     </script>
 </body>
 
