@@ -16,6 +16,8 @@
             background: #0f172a;
             color: #e5e7eb;
             font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
         .card {
@@ -57,32 +59,55 @@
             text-transform: uppercase;
             font-size: 0.7rem;
         }
+
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #main-content {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container py-4">
+    <div id="auth-screen">
+        <div class="card p-4 text-center shadow-lg" style="width: 350px;">
+            <h4 class="mb-3 text-info-custom">🔒 Protected Area</h4>
+            <p class="small text-secondary">FaruqAdv VPN System</p>
+            <input type="password" id="passInput" class="form-control mb-3 text-center" placeholder="Password">
+            <button class="btn btn-primary w-100" onclick="checkPass()">Masuk</button>
+        </div>
+    </div>
+
+    <div class="container py-4" id="main-content">
         <div class="text-center mb-4">
             <h3 class="text-info-custom">🚀 VPN Generator Mikrotik</h3>
-            <p class="text-secondary">Otomatisasi Script Server & Client (Anti-Undefined)</p>
+            <p class="text-secondary">FaruqAdv Edition</p>
         </div>
 
-        <div class="card p-4 mb-4 shadow">
-            <label class="form-label fw-bold">🔗 Link Google Sheet (Link Edit atau CSV)</label>
-            <div class="input-group mb-2">
-                <input type="text" id="sheetUrl" class="form-control" placeholder="Paste link Google Sheet di sini...">
-                <button class="btn btn-primary px-4" onclick="loadFromSheet()">📡 Tarik Data</button>
+        <div class="card p-4 mb-4 shadow text-center">
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button class="btn btn-primary px-4" onclick="loadFromSheet()">📡 Sinkron Data</button>
+                <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
+                    target="_blank" class="btn btn-outline-success px-4">📑 Buka Spreadsheet</a>
+                <button class="btn btn-warning px-4" onclick="downloadCHRConfig()">📦 Download Script CHR Saja</button>
             </div>
-            <p class="small text-muted mb-0">Pastikan akses Google Sheet di-set ke <b>"Anyone with the link"</b>.</p>
         </div>
 
         <div class="row g-2 mb-4">
-            <div class="col-md-9">
-                <input type="text" id="search" class="form-control py-2"
-                    placeholder="🔍 Cari Username atau IP Remote...">
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-outline-info w-100" onclick="downloadAllConfig()">⬇️ Download .RSC All</button>
+            <div class="col-md-12">
+                <input type="text" id="search" class="form-control py-3"
+                    placeholder="🔍 Cari Nama Client, User, atau IP Remote...">
             </div>
         </div>
 
@@ -90,9 +115,28 @@
     </div>
 
     <script>
+        // --- BAGIAN UPDATE GAMPANG DI SINI ---
+        const CONFIG = {
+            PASSWORD: "adminfaruqadv",
+            DOMAIN: "chr.faruqadv.my.id", // Update Domain di sini saja
+            SHEET_URL: "https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/export?format=csv"
+        };
+
         let clients = [];
 
-        // FUNGSI NORMALISASI: Mengubah semua judul kolom jadi huruf kecil tanpa spasi
+        function checkPass() {
+            const input = document.getElementById('passInput').value;
+            if (input === CONFIG.PASSWORD) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                loadFromSheet();
+            } else {
+                alert('Password Salah!');
+            }
+        }
+
+        document.getElementById('passInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPass(); });
+
         function normalizeData(data) {
             return data.map(item => {
                 const newItem = {};
@@ -105,22 +149,8 @@
         }
 
         function loadFromSheet() {
-            let url = document.getElementById('sheetUrl').value.trim();
-            if (!url) return alert('Link URL masih kosong!');
-
-            // AUTO FIX: Mengubah link EDIT menjadi link EXPORT CSV
-            if (url.includes('/edit') || url.includes('/sharing')) {
-                const match = url.match(/\/d\/(.+?)\//);
-                if (match && match[1]) {
-                    url = `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
-                }
-            }
-
-            fetch(url)
-                .then(res => {
-                    if (!res.ok) throw new Error('Pastikan setingan Sharing adalah "Anyone with link".');
-                    return res.text();
-                })
+            fetch(CONFIG.SHEET_URL)
+                .then(res => res.text())
                 .then(csv => {
                     const wb = XLSX.read(csv, { type: 'string' });
                     const sheetName = wb.SheetNames[0];
@@ -128,7 +158,7 @@
                     clients = normalizeData(rawJson);
                     render(clients);
                 })
-                .catch(err => alert(err.message));
+                .catch(err => alert("Gagal mengambil data dari Google Sheets."));
         }
 
         function buildOutput(c) {
@@ -143,17 +173,23 @@
             const olt = c.portcustom2000 || "";
             const no = c.no || "0";
 
-            // Script untuk di Server (CHR)
-            const serverScript = `/ppp secret add local-address=${loc} name=${u} pass=${p} profile="${prof}" remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${winbox} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+            // SCRIPT KHUSUS SERVER (CHR)
+            const serverOnly = `/ppp secret add local-address=${loc} name=${u} pass=${p} profile="${prof}" remote-address=${rem} service=${proto}
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${winbox} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-winbox"
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
 
-            // Script untuk di Client (MikroTik Pelanggan)
-            const clientScript = `/interface ${proto}-client add connect-to=chr.faruqadv.my.id name=VPN-faruqadv user=${u} password=${p} disabled=no`;
+            // SCRIPT CLIENT (Otomatis pakai CONFIG.DOMAIN)
+            const clientScript = `/interface ${proto}-client add connect-to=${CONFIG.DOMAIN} name=VPN-faruqadv user=${u} password=${p} disabled=no`;
 
             return {
-                full: `[ SCRIPT SERVER CHR ]\n${serverScript}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${clientScript}\n\n--- INFO LOGIN ---\nUser: ${u} | Pass: ${p}\nRemote IP: ${rem}\n\n📍 Port Winbox : chr.faruqadv.my.id:${winbox}\n📍 Port API    : chr.faruqadv.my.id:${api}\n📍 Port 2000   : chr.faruqadv.my.id:${olt}`,
-                clientOnly: clientScript
+                server: serverOnly,
+                client: clientScript,
+                // INFO LOGIN (Otomatis pakai CONFIG.DOMAIN)
+                full: `[ SCRIPT SERVER CHR ]\n${serverOnly}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${clientScript}\n\n--- INFO LOGIN ---\nUser: ${u} | Pass: ${p}\nRemote IP: ${rem}\n\n📍 Port Winbox : ${CONFIG.DOMAIN}:${winbox}\n📍 Port API    : ${CONFIG.DOMAIN}:${api}\n📍 Port 2000   : ${CONFIG.DOMAIN}:${olt}`
             };
         }
+
         function render(data) {
             const container = document.getElementById('output');
             container.innerHTML = '';
@@ -169,8 +205,8 @@
                         </div>
                         <pre id="code-${i}">${scripts.full}</pre>
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary btn-sm" onclick="copyTextDirect('${scripts.clientOnly}', this)">📋 Copy Script CLIENT saja</button>
-                            <button class="btn btn-outline-success btn-sm" onclick="copyFromID('code-${i}', this)">📄 Copy Semua (Server + Client)</button>
+                            <button class="btn btn-primary btn-sm" onclick="copyTextDirect('${scripts.client}', this)">📋 Copy Script CLIENT</button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="copyTextDirect('${scripts.server}', this)">🖥️ Copy Script CHR Saja</button>
                         </div>
                     </div>`;
                 container.appendChild(card);
@@ -180,30 +216,25 @@
         function copyTextDirect(text, btn) {
             navigator.clipboard.writeText(text).then(() => {
                 const old = btn.innerText;
-                btn.innerText = '✅ Script Client Tersalin!';
+                btn.innerText = '✅ Tersalin!';
                 setTimeout(() => btn.innerText = old, 1500);
             });
         }
 
-        function copyFromID(id, btn) {
-            const txt = document.getElementById(id).innerText;
-            navigator.clipboard.writeText(txt).then(() => {
-                const old = btn.innerText;
-                btn.innerText = '✅ Semua Script Tersalin!';
-                setTimeout(() => btn.innerText = old, 1500);
-            });
-        }
-
-        function downloadAllConfig() {
-            if (!clients.length) return alert('Data belum di-load!');
-            const all = clients.map(c => buildOutput(c).full).join('\n\n# --------------------------\n\n');
-            const blob = new Blob([all], { type: 'text/plain' });
-            saveAs(blob, 'MIGRASI-LENGKAP.rsc');
+        function downloadCHRConfig() {
+            if (!clients.length) return alert('Data belum ditarik!');
+            const allCHR = clients.map(c => buildOutput(c).server).join('\n\n');
+            const blob = new Blob([allCHR], { type: 'text/plain' });
+            saveAs(blob, 'MIGRASI_CHR_ONLY.rsc');
         }
 
         document.getElementById('search').addEventListener('input', (e) => {
             const q = e.target.value.toLowerCase();
-            const filtered = clients.filter(c => (c.username || '').toLowerCase().includes(q) || (c.remote || '').includes(q));
+            const filtered = clients.filter(c =>
+                (c.username || '').toLowerCase().includes(q) ||
+                (c.remote || '').includes(q) ||
+                (c.protocol || '').toLowerCase().includes(q)
+            );
             render(filtered);
         });
     </script>
