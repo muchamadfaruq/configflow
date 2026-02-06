@@ -3,38 +3,39 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>VPN Generator Mikrotik - FaruqAdv</title>
+    <title>VPN Generator Pro - FaruqAdv</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-
     <style>
         body {
             background: #0f172a;
             color: #e5e7eb;
             font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 0;
         }
 
         .card {
             background: #020617;
             border: 1px solid #1e293b;
             border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            border-color: #3b82f6;
         }
 
         pre {
             background: #000;
             color: #22c55e;
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             border: 1px solid #1e293b;
-            max-height: 250px;
+            max-height: 400px;
             overflow-y: auto;
+            white-space: pre-wrap;
         }
 
         .form-control {
@@ -43,200 +44,245 @@
             color: white;
         }
 
-        .form-control:focus {
-            background: #1e293b;
-            color: white;
-            border-color: #3b82f6;
-            box-shadow: none;
-        }
-
         .text-info-custom {
             color: #3b82f6;
             font-weight: bold;
         }
 
-        .badge-protocol {
-            text-transform: uppercase;
-            font-size: 0.7rem;
+        .modal-content {
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: white;
         }
 
-        #auth-screen {
+        .loading-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #0f172a;
-            display: flex;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            flex-direction: column;
         }
 
-        #main-content {
-            display: none;
+        .btn-copy-all {
+            background: #1e293b;
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .btn-copy-all:hover {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .info-value {
+            color: #f8fafc;
+            font-weight: 600;
         }
     </style>
 </head>
 
 <body>
-    <div id="auth-screen">
-        <div class="card p-4 text-center shadow-lg" style="width: 350px;">
-            <h4 class="mb-3 text-info-custom">🔒 Protected Area</h4>
-            <p class="small text-secondary">FaruqAdv VPN System</p>
-            <input type="password" id="passInput" class="form-control mb-3 text-center" placeholder="Password">
-            <button class="btn btn-primary w-100" onclick="checkPass()">Masuk</button>
-        </div>
+
+    <div class="loading-overlay" id="loader">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 id="loader-text">🔄 Memproses...</h5>
     </div>
 
-    <div class="container py-4" id="main-content">
+    <div class="container py-4">
         <div class="text-center mb-4">
-            <h3 class="text-info-custom">🚀 VPN Generator Mikrotik</h3>
-            <p class="text-secondary">FaruqAdv Edition</p>
+            <h2 class="text-info-custom">🚀 VPN Management FaruqAdv</h2>
+            <p class="text-secondary">Sistem Generator & Monitoring Database Pelanggan</p>
         </div>
 
-        <div class="card p-4 mb-4 shadow text-center">
+        <div class="card p-4 mb-4 shadow text-center border-info">
             <div class="d-flex justify-content-center gap-2 flex-wrap">
                 <button class="btn btn-primary px-4" onclick="loadFromSheet()">📡 Sinkron Data</button>
+                <button class="btn btn-success px-4" onclick="openAutoModal()">➕ Tambah Pelanggan</button>
                 <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
-                    target="_blank" class="btn btn-outline-success px-4">📑 Buka Spreadsheet</a>
-                <button class="btn btn-warning px-4" onclick="downloadCHRConfig()">📦 Download Script CHR Saja</button>
+                    target="_blank" class="btn btn-outline-success px-4">📂 Buka Sheets</a>
+                <button class="btn btn-warning px-4 fw-bold" onclick="downloadCHRConfig()">📦 Migrasi CHR
+                    (.rsc)</button>
             </div>
         </div>
 
-        <div class="row g-2 mb-4">
-            <div class="col-md-12">
-                <input type="text" id="search" class="form-control py-3"
-                    placeholder="🔍 Cari Nama Client, User, atau IP Remote...">
-            </div>
-        </div>
+        <input type="text" id="search" class="form-control py-3 mb-4 shadow-sm"
+            placeholder="🔍 Cari Nama, Username, atau IP Remote...">
 
         <div id="output" class="row g-3"></div>
     </div>
 
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-info-custom">Input Data Pelanggan Baru</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="vpnForm" class="row g-3">
+                        <div class="col-md-2"><label class="small fw-bold">No</label><input type="text" id="in-no"
+                                name="no" class="form-control" readonly></div>
+                        <div class="col-md-5"><label class="small fw-bold">Nama Pelanggan / User</label><input
+                                type="text" name="username" class="form-control" placeholder="Contoh: Budi_Net"
+                                required></div>
+                        <div class="col-md-5"><label class="small fw-bold">Password VPN</label><input type="text"
+                                name="password" class="form-control" value="12345"></div>
+                        <div class="col-md-3"><label class="small fw-bold">Remote IP</label><input type="text"
+                                id="in-remote" name="remote" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small fw-bold">Port Winbox</label><input type="text"
+                                id="in-winbox" name="portwinbox" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small fw-bold">Port API</label><input type="text"
+                                id="in-api" name="portapi" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small fw-bold">Port OLT (2000)</label><input type="text"
+                                id="in-olt" name="port2000" class="form-control" required></div>
+                        <input type="hidden" name="protocol" value="l2tp"><input type="hidden" name="profile"
+                            value="default"><input type="hidden" name="local" value="10.9.8.1">
+                        <div class="col-12 mt-4"><button type="submit"
+                                class="btn btn-primary btn-lg w-100 fw-bold shadow">🚀 SIMPAN & TERBITKAN
+                                SCRIPT</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- BAGIAN UPDATE GAMPANG DI SINI ---
         const CONFIG = {
-            PASSWORD: "adminfaruqadv",
-            DOMAIN: "chr.faruqadv.my.id", // Update Domain di sini saja
-            SHEET_URL: "https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/export?format=csv"
+            DOMAIN: "chr.faruqadv.my.id",
+            SHEET_URL: "https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/export?format=csv",
+            APPS_SCRIPT: "https://script.google.com/macros/s/AKfycbyA_0KJkzIRoqYuuijEaRVSTG3rbxWYTceiC_yJw66ndUdA6aH_ze3Uv27YoTsUNEfx/exec"
         };
 
         let clients = [];
+        window.onload = loadFromSheet;
 
-        function checkPass() {
-            const input = document.getElementById('passInput').value;
-            if (input === CONFIG.PASSWORD) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                loadFromSheet();
-            } else {
-                alert('Password Salah!');
-            }
-        }
-
-        document.getElementById('passInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPass(); });
-
-        function normalizeData(data) {
-            return data.map(item => {
-                const newItem = {};
-                for (let key in item) {
-                    const cleanKey = key.toLowerCase().replace(/\s+/g, '');
-                    newItem[cleanKey] = item[key];
-                }
-                return newItem;
-            });
+        async function openAutoModal() {
+            showLoader("🔍 Mengambil urutan terakhir...");
+            try {
+                const res = await fetch(CONFIG.APPS_SCRIPT);
+                const last = await res.json();
+                document.getElementById('in-no').value = parseInt(last.no) + 1;
+                document.getElementById('in-winbox').value = parseInt(last.winbox) + 1;
+                document.getElementById('in-api').value = parseInt(last.api) + 1;
+                document.getElementById('in-olt').value = parseInt(last.olt) + 1;
+                let ipParts = last.remote.split('.');
+                ipParts[3] = parseInt(ipParts[3]) + 1;
+                document.getElementById('in-remote').value = ipParts.join('.');
+                hideLoader();
+                new bootstrap.Modal(document.getElementById('addModal')).show();
+            } catch (e) { hideLoader(); alert("Gagal koneksi ke server!"); }
         }
 
         function loadFromSheet() {
-            fetch(CONFIG.SHEET_URL)
-                .then(res => res.text())
-                .then(csv => {
-                    const wb = XLSX.read(csv, { type: 'string' });
-                    const sheetName = wb.SheetNames[0];
-                    const rawJson = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
-                    clients = normalizeData(rawJson);
-                    render(clients);
-                })
-                .catch(err => alert("Gagal mengambil data dari Google Sheets."));
+            showLoader("📡 Sinkronisasi database...");
+            fetch(CONFIG.SHEET_URL + "&cb=" + Date.now()).then(r => r.text()).then(csv => {
+                const wb = XLSX.read(csv, { type: 'string' });
+                const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+                clients = raw.map(item => {
+                    const newItem = {};
+                    for (let key in item) { newItem[key.toLowerCase().replace(/\s+/g, '')] = item[key]; }
+                    return newItem;
+                });
+                render(clients);
+                hideLoader();
+            });
         }
 
-        function buildOutput(c) {
-            const u = c.username || "N/A";
-            const p = c.password || "";
-            const rem = c.remote || "";
-            const loc = c.local || "10.9.8.1";
-            const proto = (c.protocol || "l2tp").toLowerCase();
-            const prof = c.profile || "default";
-            const winbox = c.portwinbox || "";
-            const api = c.portapi || "";
-            const olt = c.portcustom2000 || "";
-            const no = c.no || "0";
+        // FUNGSI MIGRASI (PENTING)
+        function downloadCHRConfig() {
+            if (!clients.length) return alert('Data masih kosong, silakan sinkron data dulu!');
 
-            // SCRIPT KHUSUS SERVER (CHR)
-            const serverOnly = `/ppp secret add local-address=${loc} name=${u} pass=${p} profile="${prof}" remote-address=${rem} service=${proto}
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${winbox} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-winbox"
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+            let rscHeader = "/system identity set name=CHR-FaruqAdv\n/interface l2tp-server server set enabled=yes use-ipsec=no\n\n# --- IMPORT SECRET & NAT START ---\n";
 
-            // SCRIPT CLIENT (Otomatis pakai CONFIG.DOMAIN)
-            const clientScript = `/interface ${proto}-client add connect-to=${CONFIG.DOMAIN} name=VPN-faruqadv user=${u} password=${p} disabled=no`;
+            let rscBody = clients.map(c => {
+                const u = c.username || "N/A";
+                const p = c.password || "12345";
+                const rem = c.remote || "";
+                const wb = c.portwinbox || "";
+                const api = c.portapi || "";
+                const olt = c.port2000 || c.portcustom2000 || "";
+                const no = c.no || "0";
 
-            return {
-                server: serverOnly,
-                client: clientScript,
-                // INFO LOGIN (Otomatis pakai CONFIG.DOMAIN)
-                full: `[ SCRIPT SERVER CHR ]\n${serverOnly}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${clientScript}\n\n--- INFO LOGIN ---\nUser: ${u} | Pass: ${p}\nRemote IP: ${rem}\n\n📍 Port Winbox : ${CONFIG.DOMAIN}:${winbox}\n📍 Port API    : ${CONFIG.DOMAIN}:${api}\n📍 Port 2000   : ${CONFIG.DOMAIN}:${olt}`
-            };
+                return `# PELANGGAN: ${u}\n/ppp secret add local-address=10.9.8.1 name=${u} password=${p} profile=default remote-address=${rem} service=l2tp\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+            }).join('\n\n');
+
+            let rscFooter = "\n\n# --- IMPORT SELESAI ---";
+
+            const blob = new Blob([rscHeader + rscBody + rscFooter], { type: "text/plain;charset=utf-8" });
+            saveAs(blob, "MIGRASI_LENGKAP_CHR.rsc");
         }
+
+        function deleteUser(username) {
+            if (!confirm(`Hapus permanen pelanggan: ${username}?`)) return;
+            showLoader(`🗑️ Menghapus data...`);
+            fetch(CONFIG.APPS_SCRIPT, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: 'delete', username: username })
+            }).then(() => setTimeout(() => { loadFromSheet(); hideLoader(); }, 2000));
+        }
+
+        document.getElementById('vpnForm').onsubmit = function (e) {
+            e.preventDefault();
+            showLoader("💾 Menyimpan data...");
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(Object.fromEntries(new FormData(this))) })
+                .then(() => setTimeout(() => { loadFromSheet(); bootstrap.Modal.getInstance(document.getElementById('addModal')).hide(); hideLoader(); }, 2500));
+        };
 
         function render(data) {
-            const container = document.getElementById('output');
-            container.innerHTML = '';
-            data.forEach((c, i) => {
-                const scripts = buildOutput(c);
-                const card = document.createElement('div');
-                card.className = 'col-md-6';
-                card.innerHTML = `
-                    <div class="card p-3 h-100 shadow-sm">
-                        <div class="d-flex justify-content-between mb-2">
-                            <h5 class="text-info-custom mb-0">${c.username || 'Unnamed'}</h5>
-                            <span class="badge bg-success badge-protocol">${c.protocol || 'L2TP'}</span>
+            const out = document.getElementById('output');
+            out.innerHTML = '';
+            [...data].reverse().forEach((c, i) => {
+                const u = c.username || "N/A";
+                const p = c.password || "";
+                const rem = c.remote || "";
+                const wb = c.portwinbox || "";
+                const api = c.portapi || "";
+                const olt = c.port2000 || c.portcustom2000 || "";
+                const no = c.no || "0";
+
+                const srv = `/ppp secret add local-address=10.9.8.1 name=${u} pass=${p} profile=default remote-address=${rem} service=l2tp\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+                const cli = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no`;
+
+                const fullTxt = `==== DATA PELANGGAN NO: ${no} ====\nPelanggan: ${u}\nIP Remote: ${rem}\n\n[ SCRIPT SERVER CHR ]\n${srv}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${cli}\n\n--- AKSES REMOTE ---\n📍 Winbox: ${CONFIG.DOMAIN}:${wb}\n📍 API   : ${CONFIG.DOMAIN}:${api}\n📍 OLT   : ${CONFIG.DOMAIN}:${olt}`;
+
+                out.innerHTML += `
+                <div class="col-md-6">
+                    <div class="card p-3 h-100 shadow border-secondary">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div><h4 class="text-info-custom mb-0">${u}</h4><small class="text-secondary">No. Urut: ${no} | IP: ${rem}</small></div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u}')">🗑️ Hapus</button>
                         </div>
-                        <pre id="code-${i}">${scripts.full}</pre>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary btn-sm" onclick="copyTextDirect('${scripts.client}', this)">📋 Copy Script CLIENT</button>
-                            <button class="btn btn-outline-warning btn-sm" onclick="copyTextDirect('${scripts.server}', this)">🖥️ Copy Script CHR Saja</button>
+                        <div class="mb-3"><div class="row g-2">
+                                <div class="col-6"><div class="bg-dark p-2 rounded border border-secondary"><span class="info-label">Winbox Port</span><br><span class="info-value text-warning">${wb}</span></div></div>
+                                <div class="col-6"><div class="bg-dark p-2 rounded border border-secondary"><span class="info-label">OLT/Web Port</span><br><span class="info-value text-info">${olt}</span></div></div>
+                        </div></div>
+                        <pre id="code-${i}">${fullTxt}</pre>
+                        <div class="d-grid gap-2 mt-2">
+                            <button class="btn btn-primary btn-sm fw-bold" onclick="copyTxt('${cli}', this)">📋 Copy Script Client</button>
+                            <button class="btn btn-copy-all btn-sm" onclick="copyFromID('code-${i}', this)">📄 Copy Info Lengkap</button>
                         </div>
-                    </div>`;
-                container.appendChild(card);
+                    </div>
+                </div>`;
             });
         }
 
-        function copyTextDirect(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
-                const old = btn.innerText;
-                btn.innerText = '✅ Tersalin!';
-                setTimeout(() => btn.innerText = old, 1500);
-            });
-        }
-
-        function downloadCHRConfig() {
-            if (!clients.length) return alert('Data belum ditarik!');
-            const allCHR = clients.map(c => buildOutput(c).server).join('\n\n');
-            const blob = new Blob([allCHR], { type: 'text/plain' });
-            saveAs(blob, 'MIGRASI_CHR_ONLY.rsc');
-        }
-
-        document.getElementById('search').addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = clients.filter(c =>
-                (c.username || '').toLowerCase().includes(q) ||
-                (c.remote || '').includes(q) ||
-                (c.protocol || '').toLowerCase().includes(q)
-            );
-            render(filtered);
-        });
+        function showLoader(msg) { document.getElementById('loader-text').innerText = msg; document.getElementById('loader').style.display = 'flex'; }
+        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+        function copyTxt(text, btn) { navigator.clipboard.writeText(text).then(() => { const old = btn.innerText; btn.innerText = '✅ Berhasil Disalin!'; setTimeout(() => btn.innerText = old, 1500); }); }
+        function copyFromID(id, btn) { copyTxt(document.getElementById(id).innerText, btn); }
     </script>
 </body>
 
