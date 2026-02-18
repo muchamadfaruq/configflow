@@ -3,56 +3,314 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>VPN Generator Pro - FaruqAdv</title>
+    <title>VPN Monitoring Pro - FaruqAdv</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
     <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --neon-blue: #0ea5e9;
+        }
+
         body {
-            background: #0f172a;
-            color: #e5e7eb;
-            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+            color: #e2e8f0;
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
         }
 
-        .card {
-            background: #020617;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            transition: 0.3s;
+        /* --- GLASSMORPHISM CARD --- */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            animation: slideUp 0.5s ease forwards;
         }
 
-        .card:hover {
-            border-color: #3b82f6;
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- BUTTONS --- */
+        .btn-custom {
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary-glow {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-success-glow {
+            background: var(--success-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-warning-glow {
+            background: var(--warning-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-danger-glow {
+            background: var(--danger-gradient);
+            color: white;
+        }
+
+        .btn-outline-glow {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #cbd5e1;
+        }
+
+        .btn-wa-glow {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+        }
+
+        .btn-custom:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+            color: white;
+        }
+
+        /* --- INPUTS --- */
+        .form-control,
+        .form-select {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+            color: white;
+        }
+
+        ::placeholder {
+            color: #64748b;
+        }
+
+        /* --- TERMINAL --- */
+        .terminal-window {
+            background: #0d1117;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            margin-top: 10px;
+        }
+
+        .terminal-header {
+            background: #161b22;
+            padding: 8px 12px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red {
+            background: #ff5f56;
+        }
+
+        .dot-yellow {
+            background: #ffbd2e;
+        }
+
+        .dot-green {
+            background: #27c93f;
         }
 
         pre {
-            background: #000;
-            color: #22c55e;
+            margin: 0;
             padding: 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: 1px solid #1e293b;
-            max-height: 400px;
+            color: #58a6ff;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.70rem;
+            max-height: 200px;
             overflow-y: auto;
             white-space: pre-wrap;
         }
 
-        .form-control {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
 
-        .text-info-custom {
-            color: #3b82f6;
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        /* --- STATUS & BADGES --- */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: 0.3s;
+        }
+
+        .offline {
+            background: #475569;
+        }
+
+        .online {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        .badge-modern {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-l2tp {
+            background: rgba(14, 165, 233, 0.2);
+            color: #38bdf8;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+
+        .badge-sstp {
+            background: rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+            border: 1px solid rgba(236, 72, 153, 0.3);
+        }
+
+        .badge-id {
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+        }
+
+        /* --- INFO GRID --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .info-val {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .toggle-container {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-check-input:checked {
+            background-color: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .live-indicator {
+            color: #22c55e;
             font-weight: bold;
+            font-size: 0.8rem;
+            animation: blink 1s infinite;
+            display: none;
         }
 
-        .modal-content {
-            background: #020617;
-            border: 1px solid #1e293b;
-            color: white;
+        @keyframes blink {
+            50% {
+                opacity: 0.3;
+            }
         }
 
         .loading-overlay {
@@ -62,32 +320,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(5px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-        }
-
-        .btn-copy-all {
-            background: #1e293b;
-            color: #3b82f6;
-            border: 1px solid #3b82f6;
-        }
-
-        .btn-copy-all:hover {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .info-label {
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-
-        .info-value {
-            color: #f8fafc;
-            font-weight: 600;
         }
     </style>
 </head>
@@ -95,62 +333,124 @@
 <body>
 
     <div class="loading-overlay" id="loader">
-        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
-        <h5 id="loader-text">🔄 Memproses...</h5>
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h5 class="mt-3 fw-light tracking-wider" id="loader-text">PROCESSING...</h5>
     </div>
 
-    <div class="container py-4">
-        <div class="text-center mb-4">
-            <h2 class="text-info-custom">🚀 VPN Management FaruqAdv</h2>
-            <p class="text-secondary">Sistem Generator & Monitoring Database Pelanggan</p>
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold display-6 mb-2"
+                style="background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-router-fill me-2"></i>VPN MANAGER PRO
+            </h1>
+            <p class="text-secondary small letter-spacing-2">FARUQADV NETWORK SYSTEM</p>
         </div>
 
-        <div class="card p-4 mb-4 shadow text-center border-info">
-            <div class="d-flex justify-content-center gap-2 flex-wrap">
-                <button class="btn btn-primary px-4" onclick="loadFromSheet()">📡 Sinkron Data</button>
-                <button class="btn btn-success px-4" onclick="openAutoModal()">➕ Tambah Pelanggan</button>
-                <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
-                    target="_blank" class="btn btn-outline-success px-4">📂 Buka Sheets</a>
-                <button class="btn btn-warning px-4 fw-bold" onclick="downloadCHRConfig()">📦 Migrasi CHR
-                    (.rsc)</button>
+        <div class="glass-card p-4 mb-5">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8 d-flex flex-wrap gap-2">
+                    <button class="btn btn-custom btn-primary-glow" onclick="loadFromSheet()">
+                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Sinkron
+                    </button>
+                    <button class="btn btn-custom btn-success-glow" onclick="openAutoModal()">
+                        <i class="bi bi-person-plus-fill me-1"></i> Baru
+                    </button>
+                    <button class="btn btn-custom btn-outline-glow" onclick="checkOnlineStatus(false)">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Cek Status
+                    </button>
+                    <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
+                        target="_blank" class="btn btn-custom btn-outline-glow">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Sheet
+                    </a>
+                </div>
+                <div class="col-md-4 d-flex justify-content-md-end justify-content-center">
+                    <div class="toggle-container">
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="autoRefreshToggle"
+                                onchange="toggleAutoRefresh()">
+                            <label class="form-check-label small fw-bold text-light cursor-pointer"
+                                for="autoRefreshToggle">Auto Live</label>
+                        </div>
+                        <span id="liveIndicator" class="live-indicator"><i class="bi bi-record-circle-fill"></i>
+                            LIVE</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <input type="text" id="search" class="form-control py-3 mb-4 shadow-sm"
-            placeholder="🔍 Cari Nama, Username, atau IP Remote...">
+        <div class="position-relative mb-4">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+            <input type="text" id="search" class="form-control py-3 ps-5 shadow-none"
+                placeholder="Cari Pelanggan, IP, atau Username...">
+        </div>
 
-        <div id="output" class="row g-3"></div>
+        <div id="output" class="row g-4"></div>
+
+        <div class="text-center mt-5">
+            <button class="btn btn-custom btn-outline-glow text-warning" onclick="downloadCHRConfig()">
+                <i class="bi bi-box-seam me-1"></i> Download Migrasi Full (.rsc)
+            </button>
+        </div>
     </div>
 
     <div class="modal fade" id="addModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-card border-0">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-info-custom">Input Data Pelanggan Baru</h5>
+                    <h5 class="modal-title fw-bold text-white" id="modalTitle"><i
+                            class="bi bi-person-add me-2"></i>Input Pelanggan Baru</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="vpnForm" class="row g-3">
-                        <div class="col-md-2"><label class="small fw-bold">No</label><input type="text" id="in-no"
-                                name="no" class="form-control" readonly></div>
-                        <div class="col-md-5"><label class="small fw-bold">Nama Pelanggan / User</label><input
-                                type="text" name="username" class="form-control" placeholder="Contoh: Budi_Net"
-                                required></div>
-                        <div class="col-md-5"><label class="small fw-bold">Password VPN</label><input type="text"
-                                name="password" class="form-control" value="12345"></div>
-                        <div class="col-md-3"><label class="small fw-bold">Remote IP</label><input type="text"
-                                id="in-remote" name="remote" class="form-control" required></div>
-                        <div class="col-md-3"><label class="small fw-bold">Port Winbox</label><input type="text"
-                                id="in-winbox" name="portwinbox" class="form-control" required></div>
-                        <div class="col-md-3"><label class="small fw-bold">Port API</label><input type="text"
-                                id="in-api" name="portapi" class="form-control" required></div>
-                        <div class="col-md-3"><label class="small fw-bold">Port OLT (2000)</label><input type="text"
-                                id="in-olt" name="port2000" class="form-control" required></div>
-                        <input type="hidden" name="protocol" value="l2tp"><input type="hidden" name="profile"
-                            value="default"><input type="hidden" name="local" value="10.9.8.1">
-                        <div class="col-12 mt-4"><button type="submit"
-                                class="btn btn-primary btn-lg w-100 fw-bold shadow">🚀 SIMPAN & TERBITKAN
-                                SCRIPT</button></div>
+                        <input type="hidden" id="action_type" name="action" value="save">
+                        <input type="hidden" id="old_username" name="old_username" value="">
+
+                        <div class="col-md-2">
+                            <label class="small text-secondary mb-1">No. Urut</label>
+                            <input type="text" id="in-no" name="no" class="form-control text-center fw-bold" readonly>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small text-secondary mb-1">Username</label>
+                            <input type="text" id="in-username" name="username" class="form-control"
+                                placeholder="Contoh: budi_net" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small text-secondary mb-1">Password</label>
+                            <input type="text" id="in-password" name="password" class="form-control" value="12345">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="small text-secondary mb-1">Protokol VPN</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="protocol" id="protoL2TP"
+                                        value="l2tp" checked>
+                                    <label class="form-check-label text-white" for="protoL2TP">L2TP (Standard)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="protocol" id="protoSSTP"
+                                        value="sstp">
+                                    <label class="form-check-label text-white" for="protoSSTP">SSTP (Secure TCP
+                                        443)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3"><label class="small text-secondary mb-1">Remote IP</label><input
+                                type="text" id="in-remote" name="remote" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small text-secondary mb-1">Port Winbox</label><input
+                                type="text" id="in-winbox" name="portwinbox" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small text-secondary mb-1">Port API</label><input
+                                type="text" id="in-api" name="portapi" class="form-control" required></div>
+                        <div class="col-md-3"><label class="small text-secondary mb-1">Port OLT (2000)</label><input
+                                type="text" id="in-olt" name="port2000" class="form-control" required></div>
+
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-custom btn-primary-glow w-100" id="btnSubmit">
+                                <i class="bi bi-rocket-takeoff-fill me-2"></i> SIMPAN & PROSES
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -162,15 +462,52 @@
         const CONFIG = {
             DOMAIN: "chr.faruqadv.my.id",
             SHEET_URL: "https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/export?format=csv",
-            APPS_SCRIPT: "https://script.google.com/macros/s/AKfycbyA_0KJkzIRoqYuuijEaRVSTG3rbxWYTceiC_yJw66ndUdA6aH_ze3Uv27YoTsUNEfx/exec"
+            APPS_SCRIPT: "https://script.google.com/macros/s/AKfycbyA_0KJkzIRoqYuuijEaRVSTG3rbxWYTceiC_yJw66ndUdA6aH_ze3Uv27YoTsUNEfx/exec",
+            WA_NUMBER: "6287765881000"
         };
 
         let clients = [];
+        let refreshInterval = null;
+
         window.onload = loadFromSheet;
 
+        function toggleAutoRefresh() {
+            const toggle = document.getElementById('autoRefreshToggle');
+            const indicator = document.getElementById('liveIndicator');
+
+            if (toggle.checked) {
+                indicator.style.display = 'inline-block';
+                checkOnlineStatus(true);
+                refreshInterval = setInterval(() => { checkOnlineStatus(true); }, 10000);
+            } else {
+                indicator.style.display = 'none';
+                if (refreshInterval) clearInterval(refreshInterval);
+            }
+        }
+
+        document.getElementById('search').addEventListener('input', function (e) {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = clients.filter(c => {
+                const u = (c.username || "").toLowerCase();
+                const rem = (c.remote || "").toLowerCase();
+                const no = (c.no || "").toString();
+                return u.includes(keyword) || rem.includes(keyword) || no.includes(keyword);
+            });
+            render(filtered);
+        });
+
+        // --- FUNGSI BUKA MODAL ADD (RESET FORM) ---
         async function openAutoModal() {
-            showLoader("🔍 Mengambil urutan terakhir...");
+            showLoader("Mengambil urutan terakhir...");
             try {
+                document.getElementById('modalTitle').innerHTML = '<i class="bi bi-person-add me-2"></i>Input Pelanggan Baru';
+                document.getElementById('action_type').value = 'save';
+                document.getElementById('old_username').value = '';
+                document.getElementById('btnSubmit').innerHTML = '<i class="bi bi-rocket-takeoff-fill me-2"></i> SIMPAN & PROSES';
+                document.getElementById('in-username').value = '';
+                document.getElementById('in-password').value = '12345';
+                document.getElementById('in-username').readOnly = false;
+
                 const res = await fetch(CONFIG.APPS_SCRIPT);
                 const last = await res.json();
                 document.getElementById('in-no').value = parseInt(last.no) + 1;
@@ -185,8 +522,32 @@
             } catch (e) { hideLoader(); alert("Gagal koneksi ke server!"); }
         }
 
+        // --- FUNGSI BUKA MODAL EDIT ---
+        function openEditModal(username) {
+            const data = clients.find(c => c.username === username);
+            if (!data) return alert("Data tidak ditemukan");
+
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Pelanggan';
+            document.getElementById('action_type').value = 'edit';
+            document.getElementById('old_username').value = data.username;
+            document.getElementById('btnSubmit').innerHTML = '<i class="bi bi-save-fill me-2"></i> UPDATE PERUBAHAN';
+
+            document.getElementById('in-no').value = data.no;
+            document.getElementById('in-username').value = data.username;
+            document.getElementById('in-password').value = data.password;
+            document.getElementById('in-remote').value = data.remote;
+            document.getElementById('in-winbox').value = data.portwinbox;
+            document.getElementById('in-api').value = data.portapi;
+            document.getElementById('in-olt').value = data.port2000 || data.portcustom2000;
+
+            if (data.protocol === 'sstp') document.getElementById('protoSSTP').checked = true;
+            else document.getElementById('protoL2TP').checked = true;
+
+            new bootstrap.Modal(document.getElementById('addModal')).show();
+        }
+
         function loadFromSheet() {
-            showLoader("📡 Sinkronisasi database...");
+            showLoader("Sinkronisasi database...");
             fetch(CONFIG.SHEET_URL + "&cb=" + Date.now()).then(r => r.text()).then(csv => {
                 const wb = XLSX.read(csv, { type: 'string' });
                 const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
@@ -197,15 +558,62 @@
                 });
                 render(clients);
                 hideLoader();
+                if (document.getElementById('autoRefreshToggle').checked) { checkOnlineStatus(true); }
             });
         }
 
-        // FUNGSI MIGRASI (PENTING)
+        function checkOnlineStatus(silent = false) {
+            if (!silent) showLoader("Cek status Mikrotik...");
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ action: 'get_status' }) })
+                .then(r => r.json())
+                .then(activeUsers => {
+                    document.querySelectorAll('.status-dot').forEach(el => { if (el.classList.contains('online')) { el.classList.remove('online'); el.classList.add('offline'); } });
+                    document.querySelectorAll('.online-info').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.btn-kick').forEach(el => el.disabled = true);
+                    activeUsers.forEach(user => {
+                        const statusDot = document.getElementById(`status-${user.name}`);
+                        const infoBox = document.getElementById(`info-${user.name}`);
+                        const btnKick = document.getElementById(`kick-${user.name}`);
+                        if (statusDot) {
+                            statusDot.classList.remove('offline'); statusDot.classList.add('online');
+                            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `<i class="bi bi-clock-history"></i> ${user.uptime} &nbsp;|&nbsp; <i class="bi bi-house-door"></i> ${user['caller-id']}`; }
+                            if (btnKick) btnKick.disabled = false;
+                        }
+                    });
+                    if (!silent) hideLoader();
+                })
+                .catch(err => { if (!silent) { alert("Gagal mengambil status: " + err); hideLoader(); } });
+        }
+
+        function kickUser(username) {
+            if (!confirm(`⚠️ TENDANG USER ${username}?\nUser akan diputus koneksinya secara paksa.`)) return;
+            showLoader("Memutus koneksi...");
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ action: 'kick', username: username }) })
+                .then(r => r.text())
+                .then(res => {
+                    if (res === 'kicked') {
+                        const statusDot = document.getElementById(`status-${username}`);
+                        const infoBox = document.getElementById(`info-${username}`);
+                        const btnKick = document.getElementById(`kick-${username}`);
+                        if (statusDot) { statusDot.classList.remove('online'); statusDot.classList.add('offline'); }
+                        if (infoBox) infoBox.style.display = 'none';
+                        if (btnKick) btnKick.disabled = true;
+                        alert("✅ Sukses! User berhasil diputus.");
+                    } else { alert("❌ Gagal/User sudah offline."); }
+                    hideLoader();
+                });
+        }
+
+        function deleteUser(username) {
+            if (!confirm(`Hapus permanen pelanggan: ${username}?`)) return;
+            showLoader(`Menghapus data...`);
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ action: 'delete', username: username }) })
+                .then(() => setTimeout(() => { loadFromSheet(); hideLoader(); }, 2000));
+        }
+
         function downloadCHRConfig() {
-            if (!clients.length) return alert('Data masih kosong, silakan sinkron data dulu!');
-
-            let rscHeader = "/system identity set name=CHR-FaruqAdv\n/interface l2tp-server server set enabled=yes use-ipsec=no\n\n# --- IMPORT SECRET & NAT START ---\n";
-
+            if (!clients.length) return alert('Data kosong!');
+            let rscHeader = "/system identity set name=CHR-FaruqAdv\n/interface l2tp-server server set enabled=yes use-ipsec=no\n/interface sstp-server server set enabled=yes port=443\n\n# --- IMPORT SECRET & NAT START ---\n";
             let rscBody = clients.map(c => {
                 const u = c.username || "N/A";
                 const p = c.password || "12345";
@@ -214,36 +622,99 @@
                 const api = c.portapi || "";
                 const olt = c.port2000 || c.portcustom2000 || "";
                 const no = c.no || "0";
-
-                return `# PELANGGAN: ${u}\n/ppp secret add local-address=10.9.8.1 name=${u} password=${p} profile=default remote-address=${rem} service=l2tp\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+                const proto = c.protocol || "l2tp";
+                return `# PELANGGAN: ${u} (${proto})\n/ppp secret add local-address=10.9.8.1 name=${u} password=${p} profile=default remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
             }).join('\n\n');
-
             let rscFooter = "\n\n# --- IMPORT SELESAI ---";
-
             const blob = new Blob([rscHeader + rscBody + rscFooter], { type: "text/plain;charset=utf-8" });
             saveAs(blob, "MIGRASI_LENGKAP_CHR.rsc");
         }
 
-        function deleteUser(username) {
-            if (!confirm(`Hapus permanen pelanggan: ${username}?`)) return;
-            showLoader(`🗑️ Menghapus data...`);
-            fetch(CONFIG.APPS_SCRIPT, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ action: 'delete', username: username })
-            }).then(() => setTimeout(() => { loadFromSheet(); hideLoader(); }, 2000));
-        }
+        function copyFromValue(id, btn) { const val = document.getElementById(id).value; copyTxt(val, btn); }
 
         document.getElementById('vpnForm').onsubmit = function (e) {
             e.preventDefault();
-            showLoader("💾 Menyimpan data...");
-            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(Object.fromEntries(new FormData(this))) })
-                .then(() => setTimeout(() => { loadFromSheet(); bootstrap.Modal.getInstance(document.getElementById('addModal')).hide(); hideLoader(); }, 2500));
+            const formData = new FormData(this);
+            showLoader("Menghubungi MikroTik CHR...");
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify(Object.fromEntries(formData)) })
+                .then(response => response.text())
+                .then(result => {
+                    if (result.includes("ERROR_MIKROTIK") || result.includes("Koneksi Gagal")) { alert("❌ GAGAL MENYIMPAN!\n" + result); hideLoader(); }
+                    else { setTimeout(() => { loadFromSheet(); bootstrap.Modal.getInstance(document.getElementById('addModal')).hide(); hideLoader(); }, 1000); }
+                })
+                .catch(err => { alert("Error: " + err); hideLoader(); });
         };
+
+        window.generatePDF = function (username) {
+            const data = clients.find(c => c.username === username);
+            if (!data) return alert("Data tidak ditemukan");
+            const oltPort = data.port2000 || data.portcustom2000 || "N/A";
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 40, 'F');
+            doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
+            doc.text("FARUQADV NETWORK", 15, 20);
+            doc.setFontSize(10); doc.setFont("helvetica", "normal");
+            doc.text("Professional VPN & Network Solution", 15, 28);
+            doc.text("Support: 0877-6588-1000", 195, 20, { align: "right" });
+            // --- UPDATE WEBSITE DI SINI ---
+            doc.text("Web: faruqadvmikhmon.my.id", 195, 26, { align: "right" });
+
+            doc.setTextColor(51, 65, 85); doc.setFontSize(16); doc.setFont("helvetica", "bold");
+            doc.text("VPN ACCESS CREDENTIALS", 105, 55, { align: "center" });
+            doc.setLineWidth(0.5); doc.line(60, 58, 150, 58);
+            doc.setDrawColor(200, 200, 200); doc.setFillColor(248, 250, 252);
+            doc.roundedRect(15, 70, 180, 45, 3, 3, 'FD');
+            doc.setFontSize(11); doc.setTextColor(100);
+            doc.text("Customer ID", 25, 85); doc.text("Username", 25, 95); doc.text("Password", 25, 105);
+            doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+            doc.text(`: #${data.no}`, 60, 85); doc.text(`: ${data.username}`, 60, 95); doc.text(`: ${data.password}`, 60, 105);
+            doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+            doc.text("Protocol", 110, 85); doc.text("Remote IP", 110, 95); doc.text("Server", 110, 105);
+            doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+            doc.text(`: ${(data.protocol || 'l2tp').toUpperCase()}`, 140, 85);
+            doc.setTextColor(0, 150, 0); doc.text(`: ${data.remote}`, 140, 95);
+            doc.setTextColor(0); doc.text(`: ${CONFIG.DOMAIN}`, 140, 105);
+            doc.setFontSize(12); doc.text("Port Forwarding Access", 15, 130);
+            doc.autoTable({
+                startY: 135,
+                head: [['Service Name', 'Local Port', 'Public Access URL']],
+                body: [
+                    ['Winbox', '8291', `${CONFIG.DOMAIN}:${data.portwinbox}`],
+                    ['MikroTik API', '8728', `${CONFIG.DOMAIN}:${data.portapi}`],
+                    ['OLT / Web', '80/443', `${CONFIG.DOMAIN}:${oltPort}`],
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 10, cellPadding: 4 }
+            });
+            const finalY = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("MikroTik Configuration Script (Client Side)", 15, finalY);
+            let cleanScript = "";
+            if (data.protocol === 'sstp') {
+                cleanScript = `/interface sstp-client add connect-to=${CONFIG.DOMAIN} name="VPN-${data.username}" user=${data.username} password=${data.password} disabled=no verify-server-address-from-certificate=no verify-server-certificate=no\n\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+            } else {
+                cleanScript = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-${data.username}" user=${data.username} password=${data.password} disabled=no\n\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+            }
+            doc.setFillColor(30, 41, 59); doc.rect(15, finalY + 5, 180, 40, 'F');
+            doc.setTextColor(34, 197, 94); doc.setFont("courier", "normal"); doc.setFontSize(9);
+            const splitScript = doc.splitTextToSize(cleanScript, 170);
+            doc.text(splitScript, 20, finalY + 15);
+            doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(150);
+            doc.text("Generated automatically by FaruqAdv System", 105, 285, { align: "center" });
+            const fileName = `VPN_${data.username}.pdf`;
+            doc.save(fileName);
+            setTimeout(() => {
+                const waText = `Halo, berikut adalah detail akses VPN Anda.\n\nUsername: *${data.username}*\nIP Remote: *${data.remote}*\n\nSilakan unduh file PDF yang baru saja saya kirimkan. Terima kasih!`;
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+                window.open(waUrl, '_blank');
+            }, 1000);
+        }
 
         function render(data) {
             const out = document.getElementById('output');
             out.innerHTML = '';
+            if (data.length === 0) { out.innerHTML = '<div class="col-12 text-center py-5 text-secondary"><h5><i class="bi bi-folder-x display-4"></i><br>Data tidak ditemukan...</h5></div>'; return; }
+
             [...data].reverse().forEach((c, i) => {
                 const u = c.username || "N/A";
                 const p = c.password || "";
@@ -252,27 +723,69 @@
                 const api = c.portapi || "";
                 const olt = c.port2000 || c.portcustom2000 || "";
                 const no = c.no || "0";
+                const proto = c.protocol || "l2tp";
 
-                const srv = `/ppp secret add local-address=10.9.8.1 name=${u} pass=${p} profile=default remote-address=${rem} service=l2tp\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
-                const cli = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no`;
-
-                const fullTxt = `==== DATA PELANGGAN NO: ${no} ====\nPelanggan: ${u}\nIP Remote: ${rem}\n\n[ SCRIPT SERVER CHR ]\n${srv}\n\n[ SCRIPT CLIENT MIKROTIK ]\n${cli}\n\n--- AKSES REMOTE ---\n📍 Winbox: ${CONFIG.DOMAIN}:${wb}\n📍 API   : ${CONFIG.DOMAIN}:${api}\n📍 OLT   : ${CONFIG.DOMAIN}:${olt}`;
+                // SCRIPT SERVER
+                const srv = `/ppp secret add local-address=10.9.8.1 name=${u} pass=${p} profile=default remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+                let cli = "";
+                if (proto === 'sstp') {
+                    cli = `/interface sstp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no verify-server-address-from-certificate=no verify-server-certificate=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+                } else {
+                    cli = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+                }
+                const aksesInfo = `📍 Winbox: ${CONFIG.DOMAIN}:${wb}\n📍 API   : ${CONFIG.DOMAIN}:${api}\n📍 OLT   : ${CONFIG.DOMAIN}:${olt}`;
+                const badgeClass = proto === 'sstp' ? 'badge-sstp' : 'badge-l2tp';
 
                 out.innerHTML += `
-                <div class="col-md-6">
-                    <div class="card p-3 h-100 shadow border-secondary">
+                <div class="col-md-6 col-lg-4">
+                    <div class="glass-card p-3 h-100">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div><h4 class="text-info-custom mb-0">${u}</h4><small class="text-secondary">No. Urut: ${no} | IP: ${rem}</small></div>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u}')">🗑️ Hapus</button>
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="status-${u}" class="status-dot offline"></span>
+                                <div>
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <span class="badge badge-modern badge-id">#${no}</span>
+                                        <span class="badge badge-modern ${badgeClass}">${proto.toUpperCase()}</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-0 text-white">${u}</h5>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-glow dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-dark">
+                                    <li><button class="dropdown-item text-warning" onclick="openEditModal('${u}')"><i class="bi bi-pencil-square me-2"></i>Edit</button></li>
+                                    <li><button id="kick-${u}" class="dropdown-item text-warning btn-kick" onclick="kickUser('${u}')" disabled><i class="bi bi-lightning-fill me-2"></i>Kick User</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item text-danger" onclick="deleteUser('${u}')"><i class="bi bi-trash me-2"></i>Hapus</button></li>
+                                </ul>
+                            </div>
                         </div>
-                        <div class="mb-3"><div class="row g-2">
-                                <div class="col-6"><div class="bg-dark p-2 rounded border border-secondary"><span class="info-label">Winbox Port</span><br><span class="info-value text-warning">${wb}</span></div></div>
-                                <div class="col-6"><div class="bg-dark p-2 rounded border border-secondary"><span class="info-label">OLT/Web Port</span><br><span class="info-value text-info">${olt}</span></div></div>
-                        </div></div>
-                        <pre id="code-${i}">${fullTxt}</pre>
-                        <div class="d-grid gap-2 mt-2">
-                            <button class="btn btn-primary btn-sm fw-bold" onclick="copyTxt('${cli}', this)">📋 Copy Script Client</button>
-                            <button class="btn btn-copy-all btn-sm" onclick="copyFromID('code-${i}', this)">📄 Copy Info Lengkap</button>
+
+                        <div id="info-${u}" class="alert alert-success online-info py-2 small fw-bold text-center mb-2" style="display:none; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7;"></div>
+
+                        <div class="info-grid mb-3">
+                            <div class="info-item"><span class="info-label">Remote IP</span><span class="info-val" style="color:#4ade80">${rem}</span></div>
+                            <div class="info-item text-end"><span class="info-label">Password</span><span class="info-val">${p}</span></div>
+                            <div class="info-item"><span class="info-label">Winbox</span><span class="info-val text-warning">${wb}</span></div>
+                            <div class="info-item text-end"><span class="info-label">OLT WEB</span><span class="info-val text-danger">${olt}</span></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-secondary fw-bold"><i class="bi bi-terminal me-1"></i>Generated Script</span>
+                        </div>
+                        <div class="terminal-window mb-3">
+                            <div class="terminal-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+                            <pre id="code-${i}"># [ CLIENT SIDE ]\n${cli}\n\n# [ SERVER SIDE / CHR MANUAL ]\n${srv}\n\n# [ INFO ]\n${aksesInfo}</pre>
+                        </div>
+                        
+                        <textarea id="cli-storage-${i}" style="display:none;">${cli}</textarea>
+                        <textarea id="srv-storage-${i}" style="display:none;">${srv}</textarea>
+
+                        <div class="row g-2">
+                            <div class="col-6"><button class="btn btn-custom btn-primary-glow w-100 btn-sm" onclick="copyFromValue('cli-storage-${i}', this)"><i class="bi bi-clipboard me-1"></i> Copy Client</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-warning-glow w-100 btn-sm" onclick="copyFromValue('srv-storage-${i}', this)"><i class="bi bi-hdd-rack me-1"></i> Copy Server</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-outline-glow w-100 btn-sm" onclick="copyFromID('code-${i}', this)"><i class="bi bi-file-text me-1"></i> Full Info</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-wa-glow w-100 btn-sm" onclick="generatePDF('${u}')"><i class="bi bi-whatsapp me-2"></i> PDF & WA</button></div>
                         </div>
                     </div>
                 </div>`;
@@ -281,7 +794,7 @@
 
         function showLoader(msg) { document.getElementById('loader-text').innerText = msg; document.getElementById('loader').style.display = 'flex'; }
         function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-        function copyTxt(text, btn) { navigator.clipboard.writeText(text).then(() => { const old = btn.innerText; btn.innerText = '✅ Berhasil Disalin!'; setTimeout(() => btn.innerText = old, 1500); }); }
+        function copyTxt(text, btn) { navigator.clipboard.writeText(text).then(() => { const old = btn.innerHTML; btn.innerHTML = '<i class="bi bi-check2"></i> Disalin!'; setTimeout(() => btn.innerHTML = old, 1500); }); }
         function copyFromID(id, btn) { copyTxt(document.getElementById(id).innerText, btn); }
     </script>
 </body>
