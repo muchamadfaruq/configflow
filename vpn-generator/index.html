@@ -37,7 +37,6 @@
             min-height: 100vh;
         }
 
-        /* --- GLASSMORPHISM CARD --- */
         .glass-card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
@@ -45,9 +44,10 @@
             border: 1px solid var(--glass-border);
             border-radius: 16px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
             overflow: hidden;
             animation: slideUp 0.5s ease forwards;
+            position: relative;
         }
 
         .glass-card:hover {
@@ -67,7 +67,6 @@
             }
         }
 
-        /* --- BUTTONS --- */
         .btn-custom {
             border: none;
             border-radius: 8px;
@@ -119,7 +118,6 @@
             color: white;
         }
 
-        /* --- INPUTS --- */
         .form-control,
         .form-select {
             background: rgba(15, 23, 42, 0.6);
@@ -141,7 +139,6 @@
             color: #64748b;
         }
 
-        /* --- TERMINAL --- */
         .terminal-window {
             background: #0d1117;
             border-radius: 8px;
@@ -197,7 +194,6 @@
             border-radius: 3px;
         }
 
-        /* --- STATUS & BADGES --- */
         .status-dot {
             width: 10px;
             height: 10px;
@@ -255,7 +251,6 @@
             color: #cbd5e1;
         }
 
-        /* --- INFO GRID --- */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -327,69 +322,206 @@
             align-items: center;
             flex-direction: column;
         }
+
+        /* --- LOGIN LOCK SCREEN --- */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .login-box {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 320px;
+            box-shadow: 0 0 50px rgba(59, 130, 246, 0.3);
+        }
+
+        .app-content {
+            filter: blur(10px);
+            pointer-events: none;
+            transition: all 0.5s;
+        }
+
+        .app-content.unlocked {
+            filter: blur(0);
+            pointer-events: all;
+        }
+
+        /* --- BULK DELETE CHECKBOX --- */
+        .card-checkbox {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #ef4444;
+            transform: scale(1.2);
+        }
+
+        /* --- FILTER BUTTONS --- */
+        .filter-btn-group .btn {
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin-right: 5px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+        }
+
+        .filter-btn-group .btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+        }
     </style>
 </head>
 
 <body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 class="mb-4 text-white"><i class="bi bi-shield-lock-fill text-primary"></i> Login Admin</h2>
+            <input type="password" id="pinInput" class="form-control text-center text-white fw-bold fs-4 mb-3"
+                placeholder="Enter PIN" maxlength="6">
+            <button id="btnLogin" class="btn btn-primary-glow w-100 py-2" onclick="checkLogin()">UNLOCK SYSTEM</button>
+            <p id="loginMsg" class="text-danger mt-3 small fw-bold"></p>
+        </div>
+        <p class="text-secondary mt-4 small">FaruqAdv Secure Dashboard</p>
+    </div>
 
     <div class="loading-overlay" id="loader">
         <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
         <h5 class="mt-3 fw-light tracking-wider" id="loader-text">PROCESSING...</h5>
     </div>
 
-    <div class="container py-5">
-        <div class="text-center mb-5">
-            <h1 class="fw-bold display-6 mb-2"
-                style="background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="bi bi-router-fill me-2"></i>VPN MANAGER PRO
-            </h1>
-            <p class="text-secondary small letter-spacing-2">FARUQADV NETWORK SYSTEM</p>
-        </div>
+    <div class="app-content" id="mainApp">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h1 class="fw-bold display-6 mb-2"
+                    style="background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    <i class="bi bi-router-fill me-2"></i>VPN MANAGER PRO
+                </h1>
+                <p class="text-secondary small letter-spacing-2">FARUQADV NETWORK SYSTEM</p>
+            </div>
 
-        <div class="glass-card p-4 mb-5">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-8 d-flex flex-wrap gap-2">
-                    <button class="btn btn-custom btn-primary-glow" onclick="loadFromSheet()">
-                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Sinkron
-                    </button>
-                    <button class="btn btn-custom btn-success-glow" onclick="openAutoModal()">
-                        <i class="bi bi-person-plus-fill me-1"></i> Baru
-                    </button>
-                    <button class="btn btn-custom btn-outline-glow" onclick="checkOnlineStatus(false)">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Cek Status
-                    </button>
-                    <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
-                        target="_blank" class="btn btn-custom btn-outline-glow">
-                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Sheet
-                    </a>
-                </div>
-                <div class="col-md-4 d-flex justify-content-md-end justify-content-center">
-                    <div class="toggle-container">
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" id="autoRefreshToggle"
-                                onchange="toggleAutoRefresh()">
-                            <label class="form-check-label small fw-bold text-light cursor-pointer"
-                                for="autoRefreshToggle">Auto Live</label>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="glass-card p-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-secondary small text-uppercase fw-bold">Total Clients</span>
+                            <h3 class="text-white fw-bold m-0" id="stat-total">0</h3>
                         </div>
-                        <span id="liveIndicator" class="live-indicator"><i class="bi bi-record-circle-fill"></i>
-                            LIVE</span>
+                        <i class="bi bi-people-fill fs-1 text-primary opacity-50"></i>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-secondary small text-uppercase fw-bold">Online</span>
+                            <h3 class="text-white fw-bold m-0" id="stat-online">0</h3>
+                        </div>
+                        <i class="bi bi-circle-fill fs-1 text-success opacity-50"></i>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-secondary small text-uppercase fw-bold">Offline</span>
+                            <h3 class="text-white fw-bold m-0" id="stat-offline">0</h3>
+                        </div>
+                        <i class="bi bi-x-circle-fill fs-1 text-secondary opacity-50"></i>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="position-relative mb-4">
-            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-            <input type="text" id="search" class="form-control py-3 ps-5 shadow-none"
-                placeholder="Cari Pelanggan, IP, atau Username...">
-        </div>
+            <div class="glass-card p-4 mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-8 d-flex flex-wrap gap-2">
+                        <button class="btn btn-custom btn-primary-glow" onclick="loadFromSheet()">
+                            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Sinkron
+                        </button>
+                        <button class="btn btn-custom btn-success-glow" onclick="openAutoModal()">
+                            <i class="bi bi-person-plus-fill me-1"></i> Baru
+                        </button>
+                        <button class="btn btn-custom btn-outline-glow" onclick="checkOnlineStatus(false)">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Cek Status
+                        </button>
+                        <a href="https://docs.google.com/spreadsheets/d/1Xo_8UDsiF8KWvoPrWVesfNg9XfO-mTAnyj8ddShD0Pg/edit"
+                            target="_blank" class="btn btn-custom btn-outline-glow">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Sheet
+                        </a>
+                        <button class="btn btn-custom btn-danger-glow ms-auto" onclick="logout()">
+                            <i class="bi bi-lock-fill me-1"></i> Lock
+                        </button>
+                    </div>
 
-        <div id="output" class="row g-4"></div>
+                    <div class="col-md-4 d-flex justify-content-md-end justify-content-center">
+                        <div class="toggle-container">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="autoRefreshToggle"
+                                    onchange="toggleAutoRefresh()">
+                                <label class="form-check-label small fw-bold text-light cursor-pointer"
+                                    for="autoRefreshToggle">Auto Live</label>
+                            </div>
+                            <span id="liveIndicator" class="live-indicator"><i class="bi bi-record-circle-fill"></i>
+                                LIVE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="text-center mt-5">
-            <button class="btn btn-custom btn-outline-glow text-warning" onclick="downloadCHRConfig()">
-                <i class="bi bi-box-seam me-1"></i> Download Migrasi Full (.rsc)
-            </button>
+            <div id="bulk-action-bar" class="alert alert-danger d-flex justify-content-between align-items-center mb-4"
+                style="display:none !important; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #fca5a5;">
+                <div>
+                    <i class="bi bi-check-square-fill me-2"></i> <span id="selected-count" class="fw-bold">0</span> Item
+                    Terpilih
+                </div>
+                <button class="btn btn-sm btn-danger fw-bold shadow" onclick="deleteBulk()">
+                    <i class="bi bi-trash-fill me-1"></i> HAPUS TERPILIH
+                </button>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-5">
+                    <div class="filter-btn-group d-flex">
+                        <button class="btn active" onclick="setFilter('all', this)">Semua</button>
+                        <button class="btn" onclick="setFilter('online', this)">Online <span
+                                class="badge bg-success rounded-pill ms-1" style="font-size:0.6em">ON</span></button>
+                        <button class="btn" onclick="setFilter('offline', this)">Offline</button>
+                    </div>
+                </div>
+                <div class="col-md-7 position-relative">
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                    <input type="text" id="search" class="form-control ps-5 shadow-none"
+                        placeholder="Cari Pelanggan, IP, atau Username...">
+                </div>
+            </div>
+
+            <div id="output" class="row g-4"></div>
+
+            <div class="text-center mt-5 mb-5">
+                <div class="d-grid gap-2 col-md-6 mx-auto">
+                    <button class="btn btn-custom btn-outline-glow text-warning p-3 fs-6" onclick="downloadCHRConfig()">
+                        <i class="bi bi-box-seam display-6 d-block mb-2"></i>
+                        DOWNLOAD CONFIG MIGRASI FULL (.RSC)
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -468,13 +600,54 @@
 
         let clients = [];
         let refreshInterval = null;
+        let currentFilter = 'all';
 
-        window.onload = loadFromSheet;
+        // LOGIN
+        async function checkLogin() {
+            const input = document.getElementById('pinInput').value;
+            const btn = document.getElementById('btnLogin');
+            const msg = document.getElementById('loginMsg');
+
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cek...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(CONFIG.APPS_SCRIPT, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'login', pin: input })
+                });
+                const result = await res.text();
+
+                if (result === 'valid') {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('mainApp').classList.add('unlocked');
+                    loadFromSheet();
+                } else {
+                    msg.innerText = "PIN SALAH! AKSES DITOLAK.";
+                    document.getElementById('pinInput').value = "";
+                    btn.innerHTML = 'UNLOCK SYSTEM';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Gagal menghubungi server");
+                btn.innerHTML = 'UNLOCK SYSTEM';
+                btn.disabled = false;
+            }
+        }
+        document.getElementById('pinInput').addEventListener("keypress", function (event) { if (event.key === "Enter") checkLogin(); });
+        function logout() { location.reload(); }
+
+        // FILTER LOGIC
+        function setFilter(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn-group .btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            render(clients);
+        }
 
         function toggleAutoRefresh() {
             const toggle = document.getElementById('autoRefreshToggle');
             const indicator = document.getElementById('liveIndicator');
-
             if (toggle.checked) {
                 indicator.style.display = 'inline-block';
                 checkOnlineStatus(true);
@@ -485,18 +658,205 @@
             }
         }
 
-        document.getElementById('search').addEventListener('input', function (e) {
-            const keyword = e.target.value.toLowerCase();
-            const filtered = clients.filter(c => {
+        // SEARCH & RENDER
+        document.getElementById('search').addEventListener('input', () => render(clients));
+
+        function loadFromSheet() {
+            showLoader("Sinkronisasi database...");
+            fetch(CONFIG.SHEET_URL + "&cb=" + Date.now()).then(r => r.text()).then(csv => {
+                const wb = XLSX.read(csv, { type: 'string' });
+                const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+                clients = raw.map(item => {
+                    const newItem = {};
+                    for (let key in item) { newItem[key.toLowerCase().replace(/\s+/g, '')] = item[key]; }
+                    newItem.online = false; // Default offline
+                    return newItem;
+                });
+                render(clients);
+                hideLoader();
+                if (document.getElementById('autoRefreshToggle').checked) { checkOnlineStatus(true); }
+            });
+        }
+
+        function render(data) {
+            const out = document.getElementById('output');
+            const keyword = document.getElementById('search').value.toLowerCase();
+            out.innerHTML = '';
+
+            // Update Global Stats
+            document.getElementById('stat-total').innerText = clients.length;
+            document.getElementById('stat-online').innerText = clients.filter(c => c.online).length;
+            document.getElementById('stat-offline').innerText = clients.filter(c => !c.online).length;
+
+            let filtered = data.filter(c => {
+                // Search Logic
                 const u = (c.username || "").toLowerCase();
                 const rem = (c.remote || "").toLowerCase();
                 const no = (c.no || "").toString();
-                return u.includes(keyword) || rem.includes(keyword) || no.includes(keyword);
-            });
-            render(filtered);
-        });
+                const matchSearch = u.includes(keyword) || rem.includes(keyword) || no.includes(keyword);
 
-        // --- FUNGSI BUKA MODAL ADD (RESET FORM) ---
+                // Filter Logic
+                let matchFilter = true;
+                if (currentFilter === 'online') matchFilter = c.online;
+                if (currentFilter === 'offline') matchFilter = !c.online;
+
+                return matchSearch && matchFilter;
+            });
+
+            if (filtered.length === 0) { out.innerHTML = '<div class="col-12 text-center py-5 text-secondary"><h5><i class="bi bi-folder-x display-4"></i><br>Data tidak ditemukan...</h5></div>'; return; }
+
+            [...filtered].reverse().forEach((c, i) => {
+                const u = c.username || "N/A";
+                const p = c.password || "";
+                const rem = c.remote || "";
+                const wb = c.portwinbox || "";
+                const api = c.portapi || "";
+                const olt = c.port2000 || c.portcustom2000 || "";
+                const no = c.no || "0";
+                const proto = c.protocol || "l2tp";
+                const isOnline = c.online ? 'online' : 'offline';
+
+                // Server Side Script
+                const srv = `/ppp secret add local-address=10.9.8.1 name=${u} pass=${p} profile=default remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
+
+                // Client Side Script
+                let cli = "";
+                if (proto === 'sstp') {
+                    cli = `/interface sstp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no verify-server-address-from-certificate=no verify-server-certificate=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+                } else {
+                    cli = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
+                }
+                const aksesInfo = `📍 Winbox: ${CONFIG.DOMAIN}:${wb}\n📍 API   : ${CONFIG.DOMAIN}:${api}\n📍 OLT   : ${CONFIG.DOMAIN}:${olt}`;
+                const badgeClass = proto === 'sstp' ? 'badge-sstp' : 'badge-l2tp';
+
+                // Display Info if Online
+                let onlineInfoDiv = '';
+                if (c.online) {
+                    onlineInfoDiv = `<div id="info-${u}" class="alert alert-success online-info py-2 small fw-bold text-center mb-2" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7;"><i class="bi bi-clock-history"></i> ${c.uptime || '-'} &nbsp;|&nbsp; <i class="bi bi-house-door"></i> ${c.callerId || '-'}</div>`;
+                }
+
+                out.innerHTML += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="glass-card p-3 h-100">
+                        <input type="checkbox" class="card-checkbox" value="${u}" onchange="updateBulkBar()">
+                        <div class="d-flex justify-content-between align-items-center mb-3 ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="status-${u}" class="status-dot ${isOnline}"></span>
+                                <div>
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <span class="badge badge-modern badge-id">#${no}</span>
+                                        <span class="badge badge-modern ${badgeClass}">${proto.toUpperCase()}</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-0 text-white">${u}</h5>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-glow dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-dark">
+                                    <li><button class="dropdown-item text-warning" onclick="openEditModal('${u}')"><i class="bi bi-pencil-square me-2"></i>Edit</button></li>
+                                    <li><button id="kick-${u}" class="dropdown-item text-warning btn-kick" onclick="kickUser('${u}')" ${c.online ? '' : 'disabled'}><i class="bi bi-lightning-fill me-2"></i>Kick User</button></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item text-danger" onclick="deleteUser('${u}')"><i class="bi bi-trash me-2"></i>Hapus</button></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        ${onlineInfoDiv}
+
+                        <div class="info-grid mb-3">
+                            <div class="info-item"><span class="info-label">Remote IP</span><span class="info-val" style="color:#4ade80">${rem}</span></div>
+                            <div class="info-item text-end"><span class="info-label">Password</span><span class="info-val">${p}</span></div>
+                            <div class="info-item"><span class="info-label">Winbox</span><span class="info-val text-warning">${wb}</span></div>
+                            <div class="info-item text-end"><span class="info-label">OLT WEB</span><span class="info-val text-danger">${olt}</span></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small text-secondary fw-bold"><i class="bi bi-terminal me-1"></i>Generated Script</span>
+                        </div>
+                        <div class="terminal-window mb-3">
+                            <div class="terminal-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+                            <pre id="code-${i}"># [ CLIENT SIDE ]\n${cli}\n\n# [ SERVER SIDE / CHR MANUAL ]\n${srv}\n\n# [ INFO ]\n${aksesInfo}</pre>
+                        </div>
+                        
+                        <textarea id="cli-storage-${i}" style="display:none;">${cli}</textarea>
+                        <textarea id="srv-storage-${i}" style="display:none;">${srv}</textarea>
+
+                        <div class="row g-2">
+                            <div class="col-6"><button class="btn btn-custom btn-primary-glow w-100 btn-sm" onclick="copyFromValue('cli-storage-${i}', this)"><i class="bi bi-clipboard me-1"></i> Copy Client</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-warning-glow w-100 btn-sm" onclick="copyFromValue('srv-storage-${i}', this)"><i class="bi bi-hdd-rack me-1"></i> Copy Server</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-outline-glow w-100 btn-sm" onclick="copyFromID('code-${i}', this)"><i class="bi bi-file-text me-1"></i> Full Info</button></div>
+                            <div class="col-6"><button class="btn btn-custom btn-wa-glow w-100 btn-sm" onclick="generatePDF('${u}')"><i class="bi bi-whatsapp me-2"></i> PDF & WA</button></div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // --- BULK ACTION LOGIC ---
+        function updateBulkBar() {
+            const checked = document.querySelectorAll('.card-checkbox:checked');
+            const bar = document.getElementById('bulk-action-bar');
+            document.getElementById('selected-count').innerText = checked.length;
+            bar.style.display = checked.length > 0 ? 'flex' : 'none';
+        }
+
+        async function deleteBulk() {
+            const checked = document.querySelectorAll('.card-checkbox:checked');
+            const count = checked.length;
+            if (count === 0) return;
+
+            if (!confirm(`⚠️ BAHAYA: Anda akan menghapus ${count} pelanggan sekaligus!\nData akan hilang permanen dari Sheet dan MikroTik.\nLanjutkan?`)) return;
+
+            showLoader(`Memproses penghapusan ${count} data...`);
+
+            // Proses loop sequential agar aman
+            for (let i = 0; i < count; i++) {
+                const username = checked[i].value;
+                try {
+                    await fetch(CONFIG.APPS_SCRIPT, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'delete', username: username })
+                    });
+                } catch (e) {
+                    console.error("Gagal hapus " + username);
+                }
+            }
+
+            // Reload setelah selesai
+            setTimeout(() => {
+                document.getElementById('bulk-action-bar').style.display = 'none';
+                loadFromSheet();
+                hideLoader();
+            }, 1000);
+        }
+
+        function checkOnlineStatus(silent = false) {
+            if (!silent) showLoader("Cek status Mikrotik...");
+            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ action: 'get_status' }) })
+                .then(r => r.json())
+                .then(activeUsers => {
+                    // Update Local Data Status
+                    clients.forEach(c => {
+                        const active = activeUsers.find(au => au.name === c.username);
+                        if (active) {
+                            c.online = true;
+                            c.uptime = active.uptime;
+                            c.callerId = active['caller-id'];
+                        } else {
+                            c.online = false;
+                            c.uptime = null;
+                            c.callerId = null;
+                        }
+                    });
+
+                    // Re-render to update UI with new status
+                    render(clients);
+
+                    if (!silent) hideLoader();
+                })
+                .catch(err => { if (!silent) { alert("Gagal mengambil status: " + err); hideLoader(); } });
+        }
+
         async function openAutoModal() {
             showLoader("Mengambil urutan terakhir...");
             try {
@@ -522,7 +882,6 @@
             } catch (e) { hideLoader(); alert("Gagal koneksi ke server!"); }
         }
 
-        // --- FUNGSI BUKA MODAL EDIT ---
         function openEditModal(username) {
             const data = clients.find(c => c.username === username);
             if (!data) return alert("Data tidak ditemukan");
@@ -546,45 +905,6 @@
             new bootstrap.Modal(document.getElementById('addModal')).show();
         }
 
-        function loadFromSheet() {
-            showLoader("Sinkronisasi database...");
-            fetch(CONFIG.SHEET_URL + "&cb=" + Date.now()).then(r => r.text()).then(csv => {
-                const wb = XLSX.read(csv, { type: 'string' });
-                const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-                clients = raw.map(item => {
-                    const newItem = {};
-                    for (let key in item) { newItem[key.toLowerCase().replace(/\s+/g, '')] = item[key]; }
-                    return newItem;
-                });
-                render(clients);
-                hideLoader();
-                if (document.getElementById('autoRefreshToggle').checked) { checkOnlineStatus(true); }
-            });
-        }
-
-        function checkOnlineStatus(silent = false) {
-            if (!silent) showLoader("Cek status Mikrotik...");
-            fetch(CONFIG.APPS_SCRIPT, { method: 'POST', body: JSON.stringify({ action: 'get_status' }) })
-                .then(r => r.json())
-                .then(activeUsers => {
-                    document.querySelectorAll('.status-dot').forEach(el => { if (el.classList.contains('online')) { el.classList.remove('online'); el.classList.add('offline'); } });
-                    document.querySelectorAll('.online-info').forEach(el => el.style.display = 'none');
-                    document.querySelectorAll('.btn-kick').forEach(el => el.disabled = true);
-                    activeUsers.forEach(user => {
-                        const statusDot = document.getElementById(`status-${user.name}`);
-                        const infoBox = document.getElementById(`info-${user.name}`);
-                        const btnKick = document.getElementById(`kick-${user.name}`);
-                        if (statusDot) {
-                            statusDot.classList.remove('offline'); statusDot.classList.add('online');
-                            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `<i class="bi bi-clock-history"></i> ${user.uptime} &nbsp;|&nbsp; <i class="bi bi-house-door"></i> ${user['caller-id']}`; }
-                            if (btnKick) btnKick.disabled = false;
-                        }
-                    });
-                    if (!silent) hideLoader();
-                })
-                .catch(err => { if (!silent) { alert("Gagal mengambil status: " + err); hideLoader(); } });
-        }
-
         function kickUser(username) {
             if (!confirm(`⚠️ TENDANG USER ${username}?\nUser akan diputus koneksinya secara paksa.`)) return;
             showLoader("Memutus koneksi...");
@@ -592,12 +912,7 @@
                 .then(r => r.text())
                 .then(res => {
                     if (res === 'kicked') {
-                        const statusDot = document.getElementById(`status-${username}`);
-                        const infoBox = document.getElementById(`info-${username}`);
-                        const btnKick = document.getElementById(`kick-${username}`);
-                        if (statusDot) { statusDot.classList.remove('online'); statusDot.classList.add('offline'); }
-                        if (infoBox) infoBox.style.display = 'none';
-                        if (btnKick) btnKick.disabled = true;
+                        checkOnlineStatus(true); // Auto refresh status
                         alert("✅ Sukses! User berhasil diputus.");
                     } else { alert("❌ Gagal/User sudah offline."); }
                     hideLoader();
@@ -630,8 +945,6 @@
             saveAs(blob, "MIGRASI_LENGKAP_CHR.rsc");
         }
 
-        function copyFromValue(id, btn) { const val = document.getElementById(id).value; copyTxt(val, btn); }
-
         document.getElementById('vpnForm').onsubmit = function (e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -657,9 +970,7 @@
             doc.setFontSize(10); doc.setFont("helvetica", "normal");
             doc.text("Professional VPN & Network Solution", 15, 28);
             doc.text("Support: 0877-6588-1000", 195, 20, { align: "right" });
-            // --- UPDATE WEBSITE DI SINI ---
             doc.text("Web: faruqadvmikhmon.my.id", 195, 26, { align: "right" });
-
             doc.setTextColor(51, 65, 85); doc.setFontSize(16); doc.setFont("helvetica", "bold");
             doc.text("VPN ACCESS CREDENTIALS", 105, 55, { align: "center" });
             doc.setLineWidth(0.5); doc.line(60, 58, 150, 58);
@@ -708,88 +1019,6 @@
                 const waUrl = `https://wa.me/?text=${encodeURIComponent(waText)}`;
                 window.open(waUrl, '_blank');
             }, 1000);
-        }
-
-        function render(data) {
-            const out = document.getElementById('output');
-            out.innerHTML = '';
-            if (data.length === 0) { out.innerHTML = '<div class="col-12 text-center py-5 text-secondary"><h5><i class="bi bi-folder-x display-4"></i><br>Data tidak ditemukan...</h5></div>'; return; }
-
-            [...data].reverse().forEach((c, i) => {
-                const u = c.username || "N/A";
-                const p = c.password || "";
-                const rem = c.remote || "";
-                const wb = c.portwinbox || "";
-                const api = c.portapi || "";
-                const olt = c.port2000 || c.portcustom2000 || "";
-                const no = c.no || "0";
-                const proto = c.protocol || "l2tp";
-
-                // SCRIPT SERVER
-                const srv = `/ppp secret add local-address=10.9.8.1 name=${u} pass=${p} profile=default remote-address=${rem} service=${proto}\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${wb} protocol=tcp to-addresses=${rem} to-ports=8291 comment="${no}-${u}-Winbox"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${api} protocol=tcp to-addresses=${rem} to-ports=8728 comment="${no}-${u}-API"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=${olt} protocol=tcp to-addresses=${rem} to-ports=2000 comment="${no}-${u}-OLT"`;
-                let cli = "";
-                if (proto === 'sstp') {
-                    cli = `/interface sstp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no verify-server-address-from-certificate=no verify-server-certificate=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
-                } else {
-                    cli = `/interface l2tp-client add connect-to=${CONFIG.DOMAIN} name="VPN-FaruqAdv-${u}" user=${u} password=${p} disabled=no\n/user add name=faruqadv password=sukalupa group=full comment="User Admin Utama"\n/ip firewall nat add action=dst-nat chain=dstnat dst-port=2000 protocol=tcp to-addresses=192.168.0.88 to-ports=80 comment="NAT-OLT-UTAMA"`;
-                }
-                const aksesInfo = `📍 Winbox: ${CONFIG.DOMAIN}:${wb}\n📍 API   : ${CONFIG.DOMAIN}:${api}\n📍 OLT   : ${CONFIG.DOMAIN}:${olt}`;
-                const badgeClass = proto === 'sstp' ? 'badge-sstp' : 'badge-l2tp';
-
-                out.innerHTML += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="glass-card p-3 h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <span id="status-${u}" class="status-dot offline"></span>
-                                <div>
-                                    <div class="d-flex align-items-center gap-1 mb-1">
-                                        <span class="badge badge-modern badge-id">#${no}</span>
-                                        <span class="badge badge-modern ${badgeClass}">${proto.toUpperCase()}</span>
-                                    </div>
-                                    <h5 class="fw-bold mb-0 text-white">${u}</h5>
-                                </div>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-glow dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                <ul class="dropdown-menu dropdown-menu-dark">
-                                    <li><button class="dropdown-item text-warning" onclick="openEditModal('${u}')"><i class="bi bi-pencil-square me-2"></i>Edit</button></li>
-                                    <li><button id="kick-${u}" class="dropdown-item text-warning btn-kick" onclick="kickUser('${u}')" disabled><i class="bi bi-lightning-fill me-2"></i>Kick User</button></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><button class="dropdown-item text-danger" onclick="deleteUser('${u}')"><i class="bi bi-trash me-2"></i>Hapus</button></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div id="info-${u}" class="alert alert-success online-info py-2 small fw-bold text-center mb-2" style="display:none; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7;"></div>
-
-                        <div class="info-grid mb-3">
-                            <div class="info-item"><span class="info-label">Remote IP</span><span class="info-val" style="color:#4ade80">${rem}</span></div>
-                            <div class="info-item text-end"><span class="info-label">Password</span><span class="info-val">${p}</span></div>
-                            <div class="info-item"><span class="info-label">Winbox</span><span class="info-val text-warning">${wb}</span></div>
-                            <div class="info-item text-end"><span class="info-label">OLT WEB</span><span class="info-val text-danger">${olt}</span></div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="small text-secondary fw-bold"><i class="bi bi-terminal me-1"></i>Generated Script</span>
-                        </div>
-                        <div class="terminal-window mb-3">
-                            <div class="terminal-header"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
-                            <pre id="code-${i}"># [ CLIENT SIDE ]\n${cli}\n\n# [ SERVER SIDE / CHR MANUAL ]\n${srv}\n\n# [ INFO ]\n${aksesInfo}</pre>
-                        </div>
-                        
-                        <textarea id="cli-storage-${i}" style="display:none;">${cli}</textarea>
-                        <textarea id="srv-storage-${i}" style="display:none;">${srv}</textarea>
-
-                        <div class="row g-2">
-                            <div class="col-6"><button class="btn btn-custom btn-primary-glow w-100 btn-sm" onclick="copyFromValue('cli-storage-${i}', this)"><i class="bi bi-clipboard me-1"></i> Copy Client</button></div>
-                            <div class="col-6"><button class="btn btn-custom btn-warning-glow w-100 btn-sm" onclick="copyFromValue('srv-storage-${i}', this)"><i class="bi bi-hdd-rack me-1"></i> Copy Server</button></div>
-                            <div class="col-6"><button class="btn btn-custom btn-outline-glow w-100 btn-sm" onclick="copyFromID('code-${i}', this)"><i class="bi bi-file-text me-1"></i> Full Info</button></div>
-                            <div class="col-6"><button class="btn btn-custom btn-wa-glow w-100 btn-sm" onclick="generatePDF('${u}')"><i class="bi bi-whatsapp me-2"></i> PDF & WA</button></div>
-                        </div>
-                    </div>
-                </div>`;
-            });
         }
 
         function showLoader(msg) { document.getElementById('loader-text').innerText = msg; document.getElementById('loader').style.display = 'flex'; }
